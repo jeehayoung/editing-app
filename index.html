@@ -4,17 +4,15 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>모인컴퍼니 법인차량관리</title>
-
-  <!-- ✅ Safari 캐시 깨기 -->
-  <link rel="stylesheet" href="./styles.css?v=20260303_2" />
+  <link rel="stylesheet" href="./styles.css?v=20260303_trip2" />
 </head>
 <body>
   <main class="container">
     <header class="header">
       <h1>모인컴퍼니 법인차량관리</h1>
-      <p class="sub">지하주차장 내 이중 주차 시, 원활한 통행을 위해 재주차를 부탁드립니다.<br>
-  차량 앞면 연락처 비치 여부를 다시 한번 확인해 주세요.<br>
-  주차 민원 예방을 위해 법인 차량 이용 기록 작성에 동참해 주세요.
+      <p class="sub">🚗 <b>이중 주차 안내</b> 원활한 통행을 위해 반드시 재주차 부탁드립니다.<br>
+  📞 <b>연락처 확인</b> 앞 유리 비상 연락처 비치 여부를 꼭 확인해 주세요.<br>
+  📝 <b>기록 작성</b> 민원 예방을 위해 차량 이용 기록 작성에 동참해 주세요.
 </p>
     </header>
 
@@ -32,27 +30,27 @@
       </select>
 
       <div class="row">
-        <label class="label">출차 시간</label>
+        <label class="label">출차 시간 (출차 저장할 때 사용)</label>
         <div class="btnrow">
           <button id="depNow" class="btn primary" type="button">현재시간</button>
           <button id="depManualToggle" class="btn" type="button">직접입력</button>
         </div>
         <input id="depManual" class="input" type="datetime-local" readonly />
-        <div class="hint">현재시간 버튼을 누르면 입력칸에 자동으로 기록됩니다.</div>
+        <div class="hint">출차는 보통 바로 기록. 늦으면 ‘직접입력’으로 조정.</div>
       </div>
 
       <div class="row">
-        <label class="label">입차 시간</label>
+        <label class="label">입차 시간 (입차 저장할 때 사용)</label>
         <div class="btnrow">
           <button id="arrNow" class="btn primary" type="button">현재시간</button>
           <button id="arrManualToggle" class="btn" type="button">직접입력</button>
         </div>
         <input id="arrManual" class="input" type="datetime-local" readonly />
-        <div class="hint">입차는 늦게 기록될 수 있어 직접입력도 가능합니다.</div>
+        <div class="hint">입차(반납)는 나중에 기록 가능. 하루 이상 지나도 OK.</div>
       </div>
 
       <label class="label">주차 위치 선택</label>
-      <div class="hint">아래 버튼 맵에서 위치를 탭하세요.</div>
+      <div class="hint">아래 버튼 맵에서 위치를 탭하세요. (출차/입차 저장 모두 동일하게 사용)</div>
 
       <div class="parking-map">
         <div class="map-label top">건물입구</div>
@@ -85,13 +83,17 @@
         <button id="spotClear" class="btn small" type="button">선택 취소</button>
       </div>
 
-      <button id="saveBtn" class="btn primary full" type="button">기록 저장</button>
+      <!-- ✅ 버튼 2개 -->
+      <div class="btnrow">
+        <button id="checkoutBtn" class="btn primary full" type="button">출차 저장</button>
+        <button id="returnBtn" class="btn full" type="button">입차 저장</button>
+      </div>
 
-      <!-- ✅ class가 꼬여도 무조건 숨기기 위해 hidden 속성을 기본값으로 -->
+      <!-- 저장중 오버레이 -->
       <div id="savingOverlay" class="overlay hidden" hidden aria-live="polite">
         <div class="overlay-box">
           <div class="spinner" aria-hidden="true"></div>
-          <div class="overlay-text">저장 중…</div>
+          <div class="overlay-text" id="savingText">처리 중…</div>
         </div>
       </div>
 
@@ -105,13 +107,11 @@
       <div id="integrPanel" class="panel hidden">
         <label class="label">Apps Script Web App URL</label>
         <input id="apiUrl" class="input" readonly />
-        <button class="btn full" type="button" disabled>연동 URL 저장(자동)</button>
-        <div class="hint">이 사이트는 고정 URL로 자동 연동됩니다.</div>
+        <div class="hint">고정 URL로 자동 연동됩니다.</div>
       </div>
     </section>
   </main>
 
-  <!-- ✅ Safari 캐시 깨기 -->
-  <script src="./app.js?v=20260303_2"></script>
+  <script src="./app.js?v=20260303_trip2"></script>
 </body>
 </html>
