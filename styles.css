@@ -11,27 +11,32 @@
 *{box-sizing:border-box}
 body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo",system-ui,sans-serif;background:var(--bg);color:var(--text)}
 .container{max-width:520px;margin:0 auto;padding:16px}
-.header h1{margin:4px 0 0;font-size:28px}
-.sub{margin:6px 0 0;color:var(--muted)}
-.card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px;margin:14px 0}
+.header h1{margin:4px 0 0;font-size:26px}
+.sub{margin:6px 0 0;color:var(--muted);line-height:1.35}
+
+.card{position:relative;background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px;margin:14px 0}
 .card h2{margin:0 0 12px;font-size:18px}
-.label{display:block;margin:12px 0 6px;font-weight:600}
+
+.label{display:block;margin:12px 0 6px;font-weight:700}
 .input{width:100%;padding:12px 12px;border:1px solid var(--border);border-radius:12px;font-size:16px;background:#fff}
+.input[readonly]{background:#f9fafb}
 .hint{margin-top:6px;color:var(--muted);font-size:13px}
+
 .row{margin-top:10px}
 .btnrow{display:flex;gap:10px}
-.btn{padding:12px 14px;border:1px solid var(--border);border-radius:12px;background:#fff;font-weight:700;font-size:15px}
+.btn{padding:12px 14px;border:1px solid var(--border);border-radius:12px;background:#fff;font-weight:800;font-size:15px}
 .btn.primary{background:var(--primary);border-color:var(--primary);color:#fff}
 .btn.full{width:100%}
 .btn.small{padding:10px 12px;font-size:13px}
 .between{display:flex;align-items:center;justify-content:space-between;gap:10px}
 
-.accordion{width:100%;text-align:left;border:0;background:transparent;font-size:16px;font-weight:800;display:flex;align-items:center;justify-content:space-between}
+.accordion{width:100%;text-align:left;border:0;background:transparent;font-size:16px;font-weight:900;display:flex;align-items:center;justify-content:space-between}
 .panel{margin-top:12px}
 .hidden{display:none}
+
 .badge{font-size:12px;padding:4px 8px;border-radius:999px;border:1px solid var(--border)}
-.badge.off{background:#fff}
 .badge.on{background:#dcfce7;border-color:#86efac}
+.badge.off{background:#fff}
 
 .parking-map{
   margin-top:10px;
@@ -40,7 +45,6 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo"
   padding:12px;
   display:grid;
   grid-template-columns: 1fr 1fr 1fr 1fr;
-  grid-template-rows: auto;
   gap:10px;
   grid-template-areas:
     "labeltop b1 c1 ."
@@ -51,7 +55,8 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo"
     ".  .  .  d5"
     "labelbot . . d6";
 }
-.map-label{color:var(--muted);font-weight:700;font-size:13px}
+
+.map-label{color:var(--muted);font-weight:800;font-size:13px}
 .map-label.top{grid-area:labeltop}
 .map-label.bottom{grid-area:labelbot}
 
@@ -60,7 +65,7 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo"
   border:2px solid #cbd5e1;
   background:#fff;
   border-radius:12px;
-  font-weight:800;
+  font-weight:900;
   font-size:15px;
 }
 .spot.selected{
@@ -68,4 +73,41 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo"
   background:var(--primary-weak);
 }
 
-.toast{margin-top:10px;font-weight:700}
+.toast{margin-top:10px;font-weight:800}
+
+/* 저장중 오버레이 */
+.overlay{
+  position:absolute;
+  inset:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:rgba(255,255,255,0.75);
+  border-radius:14px;
+}
+.overlay-box{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:10px;
+  padding:14px 16px;
+  border:1px solid var(--border);
+  border-radius:14px;
+  background:#fff;
+}
+.overlay-text{
+  font-weight:900;
+}
+.spinner{
+  width:28px;
+  height:28px;
+  border-radius:50%;
+  border:3px solid #cbd5e1;
+  border-top-color: var(--primary);
+  animation: spin 0.9s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.btn[disabled]{
+  opacity:0.65;
+}
