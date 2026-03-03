@@ -5,29 +5,40 @@
   const $ = (id) => document.getElementById(id);
 
   const carSelect = $("carSelect");
-  const driverSelect = $("driverSelect");
+
+  const depDriverSelect = $("depDriverSelect");
+  const arrDriverSelect = $("arrDriverSelect");
 
   const depNow = $("depNow");
-  const arrNow = $("arrNow");
   const depManualToggle = $("depManualToggle");
-  const arrManualToggle = $("arrManualToggle");
   const depManual = $("depManual");
+
+  const arrNow = $("arrNow");
+  const arrManualToggle = $("arrManualToggle");
   const arrManual = $("arrManual");
 
-  const apiUrlInput = $("apiUrl");
-  const toggleIntegr = $("toggleIntegr");
-  const integrPanel = $("integrPanel");
-  const statusBadge = $("statusBadge");
+  const modeCheckoutBtn = $("modeCheckout");
+  const modeReturnBtn = $("modeReturn");
+  const modeHint = $("modeHint");
 
+  const checkoutSection = $("checkoutSection");
+  const returnSection = $("returnSection");
+
+  const saveBtn = $("saveBtn");
   const toast = $("toast");
-  const checkoutBtn = $("checkoutBtn");
-  const returnBtn = $("returnBtn");
+
   const savingOverlay = $("savingOverlay");
   const savingText = $("savingText");
 
   const spotPreview = $("spotPreview");
   const spotClear = $("spotClear");
 
+  const apiUrlInput = $("apiUrl");
+  const toggleIntegr = $("toggleIntegr");
+  const integrPanel = $("integrPanel");
+  const statusBadge = $("statusBadge");
+
+  let mode = "checkout"; // "checkout" | "return"
   let selectedSpot = "";
   let busy = false;
 
@@ -39,26 +50,50 @@
 
   function showBusy(on, text) {
     busy = on;
-
     if (savingText) savingText.textContent = text || "처리 중…";
     if (savingOverlay) {
       savingOverlay.hidden = !on;
       savingOverlay.classList.toggle("hidden", !on);
     }
 
-    if (checkoutBtn) checkoutBtn.disabled = on;
-    if (returnBtn) returnBtn.disabled = on;
-    if (depNow) depNow.disabled = on;
-    if (arrNow) arrNow.disabled = on;
-    if (depManualToggle) depManualToggle.disabled = on;
-    if (arrManualToggle) arrManualToggle.disabled = on;
-    if (spotClear) spotClear.disabled = on;
-    document.querySelectorAll(".spot").forEach((b) => (b.disabled = on));
+    saveBtn.disabled = on;
+    modeCheckoutBtn.disabled = on;
+    modeReturnBtn.disabled = on;
+
+    document.querySelectorAll("button, select, input").forEach((el) => {
+      // overlay를 켠 상태에서도 disabled 토글이 섞여버릴 수 있어서 save/mode만 제한적으로 관리
+    });
   }
 
   function setBadge(connected) {
     statusBadge.className = "badge " + (connected ? "on" : "off");
     statusBadge.textContent = connected ? "자동 연동" : "미연동";
+  }
+
+  function setMode(nextMode) {
+    mode = nextMode;
+
+    const isCheckout = mode === "checkout";
+    modeCheckoutBtn.classList.toggle("primary", isCheckout);
+    modeReturnBtn.classList.toggle("primary", !isCheckout);
+
+    // 섹션 토글: class + hidden 속성 2중
+    checkoutSection.classList.toggle("hidden", !isCheckout);
+    checkoutSection.hidden = !isCheckout;
+
+    returnSection.classList.toggle("hidden", isCheckout);
+    returnSection.hidden = isCheckout;
+
+    // 버튼 라벨
+    saveBtn.textContent = isCheckout ? "출차 저장" : "입차 저장";
+    modeHint.textContent = isCheckout
+      ? "출차 등록: 출차시간/출차운전자만 입력"
+      : "입차 등록: 입차시간/입차운전자 + 주차위치만 입력";
+
+    // 출차 모드에서는 주차 선택 필요 없음 → 선택 초기화해도 OK
+    if (isCheckout) {
+      clearSpot();
+    }
   }
 
   function toDatetimeLocalValue(d) {
@@ -70,7 +105,7 @@
     return `${yy}-${mm}-${dd}T${hh}:${mi}`;
   }
 
-  // ✅ 시트 저장용: YYYY/MM/DD HH:mm (분까지만)
+  // ✅ 시트 저장용: YYYY/MM/DD HH:mm
   function toSheetTimeString(d) {
     const yy = d.getFullYear();
     const mm = String(d.getMonth() + 1).padStart(2, "0");
@@ -87,7 +122,7 @@
     if (willEnable) inputEl.focus();
   }
 
-  // JSONP (CORS 회피)
+  // JSONP
   function fetchJSONP(url) {
     return new Promise((resolve, reject) => {
       const cbName = "cb_" + Math.random().toString(36).slice(2);
@@ -135,93 +170,14 @@
     const driversRes = await fetchJSONP(base + "?action=drivers");
 
     fillSelect(carSelect, carsRes.cars || [], "차량 선택");
-    fillSelect(driverSelect, driversRes.drivers || [], "운전자 선택");
+    fillSelect(depDriverSelect, driversRes.drivers || [], "출차 운전자 선택");
+    fillSelect(arrDriverSelect, driversRes.drivers || [], "입차 운전자 선택");
   }
 
-  function requireCommon() {
-    const car = carSelect.value;
-    const driver = driverSelect.value;
-
-    if (!car) throw new Error("차량을 선택해줘!");
-    if (!driver) throw new Error("운전자를 선택해줘!");
-    if (!selectedSpot) throw new Error("주차 위치를 선택해줘!");
-
-    return { car, driver };
-  }
-
-  async function postNoCors(payload) {
-    // POST는 no-cors로 “전송만” (응답 못 읽어도 시트에는 저장/업데이트됨)
-    await fetch(DEFAULT_API_URL, {
-      method: "POST",
-      mode: "no-cors",
-      headers: { "Content-Type": "text/plain;charset=utf-8" },
-      body: JSON.stringify(payload),
-    });
-  }
-
-  async function checkout() {
-    if (busy) return;
-    showBusy(true, "출차 저장 중…");
-
-    try {
-      const { car, driver } = requireCommon();
-
-      // 출차시간 없으면 지금으로
-      if (!depManual.value) depManual.value = toDatetimeLocalValue(new Date());
-      const depDate = new Date(depManual.value);
-
-      const payload = {
-        mode: "checkout",
-        car,
-        driver,
-        departureTime: toSheetTimeString(depDate),
-        parkingSpot: selectedSpot,
-      };
-
-      await postNoCors(payload);
-
-      showToast("출차 저장 완료!", true);
-
-      // UX: 출차 저장 후 입차칸은 비워두고, 입차는 나중에 누르게
-      // (원하면 여기서 depManual은 유지/초기화 옵션도 가능)
-    } catch (e) {
-      showToast(e.message || "출차 저장 실패", false);
-    } finally {
-      showBusy(false);
-    }
-  }
-
-  async function returnCar() {
-    if (busy) return;
-    showBusy(true, "입차 저장 중…");
-
-    try {
-      const { car, driver } = requireCommon();
-
-      // 입차시간 없으면 지금으로
-      if (!arrManual.value) arrManual.value = toDatetimeLocalValue(new Date());
-      const arrDate = new Date(arrManual.value);
-
-      const payload = {
-        mode: "return",
-        car,
-        driver,
-        arrivalTime: toSheetTimeString(arrDate),
-        parkingSpot: selectedSpot,
-      };
-
-      await postNoCors(payload);
-
-      showToast("입차 저장 완료! (미반납 건 자동 업데이트)", true);
-
-      // UX: 입차 저장 후 시간칸 초기화(선택)
-      // arrManual.value = "";
-      // selectedSpot = ""; ...
-    } catch (e) {
-      showToast(e.message || "입차 저장 실패", false);
-    } finally {
-      showBusy(false);
-    }
+  function clearSpot() {
+    selectedSpot = "";
+    document.querySelectorAll(".spot").forEach((b) => b.classList.remove("selected"));
+    if (spotPreview) spotPreview.textContent = "선택된 위치: 없음";
   }
 
   function initSpots() {
@@ -230,18 +186,85 @@
         document.querySelectorAll(".spot").forEach((b) => b.classList.remove("selected"));
         btn.classList.add("selected");
         selectedSpot = btn.dataset.spot;
-        spotPreview.textContent = "선택된 위치: " + selectedSpot;
+        if (spotPreview) spotPreview.textContent = "선택된 위치: " + selectedSpot;
       });
     });
 
-    spotClear.addEventListener("click", () => {
-      selectedSpot = "";
-      document.querySelectorAll(".spot").forEach((b) => b.classList.remove("selected"));
-      spotPreview.textContent = "선택된 위치: 없음";
+    if (spotClear) {
+      spotClear.addEventListener("click", () => clearSpot());
+    }
+  }
+
+  async function postNoCors(payload) {
+    await fetch(DEFAULT_API_URL, {
+      method: "POST",
+      mode: "no-cors",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify(payload),
     });
   }
 
+  function validateCommon() {
+    const car = carSelect.value;
+    if (!car) throw new Error("차량을 선택해줘!");
+    return { car };
+  }
+
+  async function save() {
+    if (busy) return;
+
+    showBusy(true, mode === "checkout" ? "출차 저장 중…" : "입차 저장 중…");
+
+    try {
+      const { car } = validateCommon();
+
+      if (mode === "checkout") {
+        const depDriver = depDriverSelect.value;
+        if (!depDriver) throw new Error("출차 운전자를 선택해줘!");
+        if (!depManual.value) depManual.value = toDatetimeLocalValue(new Date());
+        const depDate = new Date(depManual.value);
+
+        const payload = {
+          mode: "checkout",
+          car: car,
+          departureTime: toSheetTimeString(depDate),
+          departureDriver: depDriver,
+        };
+
+        await postNoCors(payload);
+        showToast("출차 저장 완료!", true);
+        return;
+      }
+
+      // return
+      const arrDriver = arrDriverSelect.value;
+      if (!arrDriver) throw new Error("입차 운전자를 선택해줘!");
+      if (!arrManual.value) arrManual.value = toDatetimeLocalValue(new Date());
+      const arrDate = new Date(arrManual.value);
+
+      if (!selectedSpot) throw new Error("주차 위치를 선택해줘!");
+
+      const payload = {
+        mode: "return",
+        car: car,
+        arrivalTime: toSheetTimeString(arrDate),
+        arrivalDriver: arrDriver,
+        parkingSpot: selectedSpot,
+      };
+
+      await postNoCors(payload);
+      showToast("입차 저장 완료! (미반납 건 자동 업데이트)", true);
+    } catch (e) {
+      showToast(e && e.message ? e.message : "저장 실패", false);
+    } finally {
+      showBusy(false);
+    }
+  }
+
   // events
+  modeCheckoutBtn.addEventListener("click", () => setMode("checkout"));
+  modeReturnBtn.addEventListener("click", () => setMode("return"));
+
   depNow.addEventListener("click", () => (depManual.value = toDatetimeLocalValue(new Date())));
   arrNow.addEventListener("click", () => (arrManual.value = toDatetimeLocalValue(new Date())));
 
@@ -249,12 +272,11 @@
   arrManualToggle.addEventListener("click", () => toggleManual(arrManual, arrManualToggle));
 
   toggleIntegr.addEventListener("click", () => integrPanel.classList.toggle("hidden"));
-
-  checkoutBtn.addEventListener("click", checkout);
-  returnBtn.addEventListener("click", returnCar);
+  saveBtn.addEventListener("click", save);
 
   // boot
   showBusy(false);
+  setMode("checkout");
   initSpots();
   loadLists().catch((e) => showToast("목록 조회 실패: " + (e && e.message ? e.message : "unknown"), false));
 })();
