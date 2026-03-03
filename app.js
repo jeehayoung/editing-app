@@ -20,42 +20,43 @@
   const statusBadge = $("statusBadge");
 
   const toast = $("toast");
-  const saveBtn = $("saveBtn");
+  const checkoutBtn = $("checkoutBtn");
+  const returnBtn = $("returnBtn");
   const savingOverlay = $("savingOverlay");
+  const savingText = $("savingText");
 
   const spotPreview = $("spotPreview");
   const spotClear = $("spotClear");
 
   let selectedSpot = "";
-  let isSaving = false;
+  let busy = false;
 
   function showToast(msg, ok = true) {
-    if (!toast) return;
     toast.textContent = msg;
     toast.style.color = ok ? "#065f46" : "#991b1b";
     setTimeout(() => (toast.textContent = ""), 2500);
   }
 
-  // ✅ overlay는 class + hidden 속성을 같이 제어 (Safari 캐시/스타일 꼬임 대비)
-  function showSaving(on) {
+  function showBusy(on, text) {
+    busy = on;
+
+    if (savingText) savingText.textContent = text || "처리 중…";
     if (savingOverlay) {
       savingOverlay.hidden = !on;
       savingOverlay.classList.toggle("hidden", !on);
     }
 
-    if (saveBtn) saveBtn.disabled = on;
+    if (checkoutBtn) checkoutBtn.disabled = on;
+    if (returnBtn) returnBtn.disabled = on;
     if (depNow) depNow.disabled = on;
     if (arrNow) arrNow.disabled = on;
     if (depManualToggle) depManualToggle.disabled = on;
     if (arrManualToggle) arrManualToggle.disabled = on;
     if (spotClear) spotClear.disabled = on;
     document.querySelectorAll(".spot").forEach((b) => (b.disabled = on));
-
-    if (saveBtn) saveBtn.textContent = on ? "저장 중…" : "기록 저장";
   }
 
   function setBadge(connected) {
-    if (!statusBadge) return;
     statusBadge.className = "badge " + (connected ? "on" : "off");
     statusBadge.textContent = connected ? "자동 연동" : "미연동";
   }
@@ -69,6 +70,7 @@
     return `${yy}-${mm}-${dd}T${hh}:${mi}`;
   }
 
+  // ✅ 시트 저장용: YYYY/MM/DD HH:mm (분까지만)
   function toSheetTimeString(d) {
     const yy = d.getFullYear();
     const mm = String(d.getMonth() + 1).padStart(2, "0");
@@ -85,7 +87,7 @@
     if (willEnable) inputEl.focus();
   }
 
-  // JSONP
+  // JSONP (CORS 회피)
   function fetchJSONP(url) {
     return new Promise((resolve, reject) => {
       const cbName = "cb_" + Math.random().toString(36).slice(2);
@@ -110,7 +112,6 @@
   }
 
   function fillSelect(selectEl, items, placeholder) {
-    if (!selectEl) return;
     selectEl.innerHTML = "";
     const opt0 = document.createElement("option");
     opt0.value = "";
@@ -137,45 +138,89 @@
     fillSelect(driverSelect, driversRes.drivers || [], "운전자 선택");
   }
 
-  async function saveLog() {
-    if (isSaving) return;
-    isSaving = true;
-    showSaving(true);
+  function requireCommon() {
+    const car = carSelect.value;
+    const driver = driverSelect.value;
+
+    if (!car) throw new Error("차량을 선택해줘!");
+    if (!driver) throw new Error("운전자를 선택해줘!");
+    if (!selectedSpot) throw new Error("주차 위치를 선택해줘!");
+
+    return { car, driver };
+  }
+
+  async function postNoCors(payload) {
+    // POST는 no-cors로 “전송만” (응답 못 읽어도 시트에는 저장/업데이트됨)
+    await fetch(DEFAULT_API_URL, {
+      method: "POST",
+      mode: "no-cors",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify(payload),
+    });
+  }
+
+  async function checkout() {
+    if (busy) return;
+    showBusy(true, "출차 저장 중…");
 
     try {
-      const base = DEFAULT_API_URL;
-      const car = carSelect ? carSelect.value : "";
-      const driver = driverSelect ? driverSelect.value : "";
+      const { car, driver } = requireCommon();
 
-      if (!car) throw new Error("차량을 선택해줘!");
-      if (!driver) throw new Error("운전자를 선택해줘!");
-      if (!selectedSpot) throw new Error("주차 위치를 선택해줘!");
-      if (!depManual || !depManual.value) throw new Error("출차시간을 입력해줘!");
-
+      // 출차시간 없으면 지금으로
+      if (!depManual.value) depManual.value = toDatetimeLocalValue(new Date());
       const depDate = new Date(depManual.value);
-      const arrDate = (arrManual && arrManual.value) ? new Date(arrManual.value) : null;
 
       const payload = {
+        mode: "checkout",
         car,
         driver,
         departureTime: toSheetTimeString(depDate),
-        arrivalTime: arrDate ? toSheetTimeString(arrDate) : "",
         parkingSpot: selectedSpot,
       };
 
-      await fetch(base, {
-        method: "POST",
-        mode: "no-cors",
-        headers: { "Content-Type": "text/plain;charset=utf-8" },
-        body: JSON.stringify(payload),
-      });
+      await postNoCors(payload);
 
-      showToast("저장 완료! (시트에서 확인)", true);
+      showToast("출차 저장 완료!", true);
+
+      // UX: 출차 저장 후 입차칸은 비워두고, 입차는 나중에 누르게
+      // (원하면 여기서 depManual은 유지/초기화 옵션도 가능)
     } catch (e) {
-      showToast(e && e.message ? e.message : "저장 실패", false);
+      showToast(e.message || "출차 저장 실패", false);
     } finally {
-      showSaving(false);
-      isSaving = false;
+      showBusy(false);
+    }
+  }
+
+  async function returnCar() {
+    if (busy) return;
+    showBusy(true, "입차 저장 중…");
+
+    try {
+      const { car, driver } = requireCommon();
+
+      // 입차시간 없으면 지금으로
+      if (!arrManual.value) arrManual.value = toDatetimeLocalValue(new Date());
+      const arrDate = new Date(arrManual.value);
+
+      const payload = {
+        mode: "return",
+        car,
+        driver,
+        arrivalTime: toSheetTimeString(arrDate),
+        parkingSpot: selectedSpot,
+      };
+
+      await postNoCors(payload);
+
+      showToast("입차 저장 완료! (미반납 건 자동 업데이트)", true);
+
+      // UX: 입차 저장 후 시간칸 초기화(선택)
+      // arrManual.value = "";
+      // selectedSpot = ""; ...
+    } catch (e) {
+      showToast(e.message || "입차 저장 실패", false);
+    } finally {
+      showBusy(false);
     }
   }
 
@@ -185,33 +230,31 @@
         document.querySelectorAll(".spot").forEach((b) => b.classList.remove("selected"));
         btn.classList.add("selected");
         selectedSpot = btn.dataset.spot;
-        if (spotPreview) spotPreview.textContent = "선택된 위치: " + selectedSpot;
+        spotPreview.textContent = "선택된 위치: " + selectedSpot;
       });
     });
 
-    if (spotClear) {
-      spotClear.addEventListener("click", () => {
-        selectedSpot = "";
-        document.querySelectorAll(".spot").forEach((b) => b.classList.remove("selected"));
-        if (spotPreview) spotPreview.textContent = "선택된 위치: 없음";
-      });
-    }
+    spotClear.addEventListener("click", () => {
+      selectedSpot = "";
+      document.querySelectorAll(".spot").forEach((b) => b.classList.remove("selected"));
+      spotPreview.textContent = "선택된 위치: 없음";
+    });
   }
 
   // events
-  if (depNow) depNow.addEventListener("click", () => (depManual.value = toDatetimeLocalValue(new Date())));
-  if (arrNow) arrNow.addEventListener("click", () => (arrManual.value = toDatetimeLocalValue(new Date())));
+  depNow.addEventListener("click", () => (depManual.value = toDatetimeLocalValue(new Date())));
+  arrNow.addEventListener("click", () => (arrManual.value = toDatetimeLocalValue(new Date())));
 
-  if (depManualToggle) depManualToggle.addEventListener("click", () => toggleManual(depManual, depManualToggle));
-  if (arrManualToggle) arrManualToggle.addEventListener("click", () => toggleManual(arrManual, arrManualToggle));
+  depManualToggle.addEventListener("click", () => toggleManual(depManual, depManualToggle));
+  arrManualToggle.addEventListener("click", () => toggleManual(arrManual, arrManualToggle));
 
-  if (toggleIntegr) toggleIntegr.addEventListener("click", () => integrPanel.classList.toggle("hidden"));
-  if (saveBtn) saveBtn.addEventListener("click", () => saveLog());
+  toggleIntegr.addEventListener("click", () => integrPanel.classList.toggle("hidden"));
 
-  // ✅ BOOT: 접속 즉시 오버레이 강제 OFF (Safari 캐시 꼬임 대비)
-  showSaving(false);
+  checkoutBtn.addEventListener("click", checkout);
+  returnBtn.addEventListener("click", returnCar);
 
-  setBadge(true);
+  // boot
+  showBusy(false);
   initSpots();
   loadLists().catch((e) => showToast("목록 조회 실패: " + (e && e.message ? e.message : "unknown"), false));
 })();
