@@ -21,63 +21,63 @@
     </header>
 
     <section class="card">
-      <h2>기록 모드 선택</h2>
+      <h2>☑️기록모드선택</h2>
 
       <div class="btnrow">
         <button id="modeCheckout" class="btn primary full" type="button">출차 등록</button>
         <button id="modeReturn" class="btn full" type="button">입차 등록</button>
       </div>
-      <div class="hint" id="modeHint">출차 등록: 출차시간/출차운전자만 입력</div>
+      <div class="hint" id="modeHint">출차 등록: 출차시간/출차운전자만 입력하세요</div>
     </section>
 
     <section class="card">
       <h2>이용 등록</h2>
 
-      <label class="label">차량</label>
+      <label class="label">🚘차량선택</label>
       <select id="carSelect" class="input">
         <option value="">차량 목록 불러오는 중…</option>
       </select>
 
       <!-- 출차 모드에서만 사용 -->
       <div id="checkoutSection">
-        <label class="label">출차 운전자</label>
+        <label class="label">👤출차 운전자</label>
         <select id="depDriverSelect" class="input">
           <option value="">운전자 목록 불러오는 중…</option>
         </select>
 
         <div class="row">
-          <label class="label">출차 시간</label>
+          <label class="label">⏱️출차 시간</label>
           <div class="btnrow">
-            <button id="depNow" class="btn primary" type="button">현재시간</button>
+            <button id="depNow" class="btn primary" type="button">현재시간입력</button>
             <button id="depManualToggle" class="btn" type="button">직접입력</button>
           </div>
           <input id="depManual" class="input" type="datetime-local" readonly />
-          <div class="hint">출차는 보통 바로 기록. 늦으면 직접입력으로 조정.</div>
+          <div class="hint">가급적 출차시 바로 기록해주시고 늦은 경우 직접입력해주세요.</div>
         </div>
       </div>
 
       <!-- 입차 모드에서만 사용 -->
       <div id="returnSection" class="hidden" hidden>
-        <label class="label">입차 운전자</label>
+        <label class="label">👤입차 운전자</label>
         <select id="arrDriverSelect" class="input">
           <option value="">운전자 목록 불러오는 중…</option>
         </select>
 
         <div class="row">
-          <label class="label">입차 시간</label>
+          <label class="label">⏱️입차 시간</label>
           <div class="btnrow">
             <button id="arrNow" class="btn primary" type="button">현재시간</button>
             <button id="arrManualToggle" class="btn" type="button">직접입력</button>
           </div>
           <input id="arrManual" class="input" type="datetime-local" readonly />
-          <div class="hint">입차(반납)는 나중에 기록 가능. 하루 이상 지나도 OK.</div>
+          <div class="hint">가급적 입차시 바로 기록해주시고 늦은 경우 직접입력해주세요.</div>
         </div>
 
-        <label class="label">주차 위치 선택</label>
-        <div class="hint">입차 등록에서만 필요합니다.</div>
+        <label class="label">📍주차 위치 선택</label>
+        <div class="hint">민원방지를 위해 꼭 정확히 선택해주세요.</div>
 
         <div class="parking-map">
-          <div class="map-label top">건물입구</div>
+          <div class="map-label top">⬆️건물입구</div>
 
           <button class="spot" data-spot="B1" style="grid-area:b1" type="button">B1</button>
           <button class="spot" data-spot="C1" style="grid-area:c1" type="button">C1</button>
@@ -99,12 +99,12 @@
           <button class="spot" data-spot="D5" style="grid-area:d5" type="button">D5</button>
           <button class="spot" data-spot="D6" style="grid-area:d6" type="button">D6</button>
 
-          <div class="map-label bottom">주차장입구</div>
+          <div class="map-label bottom">➡️주차장입구</div>
         </div>
 
         <div class="row between">
-          <div id="spotPreview" class="hint">선택된 위치: 없음</div>
-          <button id="spotClear" class="btn small" type="button">선택 취소</button>
+          <div id="spotPreview" class="hint">선택된 주차위치: 없음</div>
+          <button id="spotClear" class="btn small" type="button">재선택</button>
         </div>
       </div>
 
@@ -122,12 +122,12 @@
 
     <section class="card">
       <button id="toggleIntegr" class="accordion" type="button">
-        Google Drive 연동 설정 <span id="statusBadge" class="badge on">자동 연동</span>
+        moincompany <span id="statusBadge" class="badge on">🍕</span>
       </button>
       <div id="integrPanel" class="panel hidden">
         <label class="label">Apps Script Web App URL</label>
         <input id="apiUrl" class="input" readonly />
-        <div class="hint">고정 URL로 자동 연동됩니다.</div>
+        <div class="hint">이 부분은 삭제하거나 수정하지 마세요</div>
       </div>
     </section>
   </main>
