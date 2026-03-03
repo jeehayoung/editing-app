@@ -15,7 +15,6 @@
   const arrManual = $("arrManual");
 
   const apiUrlInput = $("apiUrl");
-  const saveUrlBtn = $("saveUrlBtn");
   const toggleIntegr = $("toggleIntegr");
   const integrPanel = $("integrPanel");
   const statusBadge = $("statusBadge");
@@ -31,34 +30,38 @@
   let isSaving = false;
 
   function showToast(msg, ok = true) {
+    if (!toast) return;
     toast.textContent = msg;
     toast.style.color = ok ? "#065f46" : "#991b1b";
     setTimeout(() => (toast.textContent = ""), 2500);
   }
 
   function showSaving(on) {
-    savingOverlay.classList.toggle("hidden", !on);
-    saveBtn.disabled = on;
-    depNow.disabled = on;
-    arrNow.disabled = on;
-    depManualToggle.disabled = on;
-    arrManualToggle.disabled = on;
-    spotClear.disabled = on;
+    // ✅ 요소가 없어서 JS가 죽는 경우 방지
+    if (savingOverlay) savingOverlay.classList.toggle("hidden", !on);
+
+    // 버튼/입력 잠금
+    if (saveBtn) saveBtn.disabled = on;
+    if (depNow) depNow.disabled = on;
+    if (arrNow) arrNow.disabled = on;
+    if (depManualToggle) depManualToggle.disabled = on;
+    if (arrManualToggle) arrManualToggle.disabled = on;
+    if (spotClear) spotClear.disabled = on;
     document.querySelectorAll(".spot").forEach((b) => (b.disabled = on));
-    saveBtn.textContent = on ? "저장 중…" : "기록 저장";
+
+    if (saveBtn) saveBtn.textContent = on ? "저장 중…" : "기록 저장";
   }
 
   function getApiUrl() {
-    // ✅ 고정 URL 자동 사용
     return DEFAULT_API_URL;
   }
 
   function setBadge(connected) {
+    if (!statusBadge) return;
     statusBadge.className = "badge " + (connected ? "on" : "off");
     statusBadge.textContent = connected ? "자동 연동" : "미연동";
   }
 
-  // datetime-local 형식: YYYY-MM-DDTHH:mm
   function toDatetimeLocalValue(d) {
     const yy = d.getFullYear();
     const mm = String(d.getMonth() + 1).padStart(2, "0");
@@ -68,7 +71,6 @@
     return `${yy}-${mm}-${dd}T${hh}:${mi}`;
   }
 
-  // ✅ 시트 저장용 형식: YYYY/MM/DD HH:mm (초/타임존 제거)
   function toSheetTimeString(d) {
     const yy = d.getFullYear();
     const mm = String(d.getMonth() + 1).padStart(2, "0");
@@ -79,13 +81,13 @@
   }
 
   function toggleManual(inputEl, btnEl) {
-    const willEnable = inputEl.readOnly; // true면 직접입력 켜기
+    const willEnable = inputEl.readOnly;
     inputEl.readOnly = !willEnable ? true : false;
     btnEl.classList.toggle("primary", willEnable);
     if (willEnable) inputEl.focus();
   }
 
-  // ✅ JSONP: CORS 우회
+  // JSONP
   function fetchJSONP(url) {
     return new Promise((resolve, reject) => {
       const cbName = "cb_" + Math.random().toString(36).slice(2);
@@ -110,6 +112,7 @@
   }
 
   function fillSelect(selectEl, items, placeholder) {
+    if (!selectEl) return;
     selectEl.innerHTML = "";
     const opt0 = document.createElement("option");
     opt0.value = "";
@@ -128,9 +131,7 @@
     const base = getApiUrl();
     setBadge(!!base);
 
-    // 고정 URL 표시 (읽기전용)
-    apiUrlInput.value = base;
-    saveUrlBtn.disabled = true;
+    if (apiUrlInput) apiUrlInput.value = base;
 
     const carsRes = await fetchJSONP(base + "?action=cars");
     const driversRes = await fetchJSONP(base + "?action=drivers");
@@ -140,39 +141,31 @@
   }
 
   async function saveLog() {
-    if (isSaving) return; // ✅ 중복 클릭 방지
+    if (isSaving) return;
     isSaving = true;
     showSaving(true);
 
     try {
       const base = getApiUrl();
-      if (!base) throw new Error("연동 URL이 없습니다.");
-
-      const car = carSelect.value;
-      const driver = driverSelect.value;
+      const car = carSelect ? carSelect.value : "";
+      const driver = driverSelect ? driverSelect.value : "";
 
       if (!car) throw new Error("차량을 선택해줘!");
       if (!driver) throw new Error("운전자를 선택해줘!");
       if (!selectedSpot) throw new Error("주차 위치를 선택해줘!");
-      if (!depManual.value) throw new Error("출차시간을 입력해줘!");
+      if (!depManual || !depManual.value) throw new Error("출차시간을 입력해줘!");
 
-      // ✅ 입력칸의 datetime-local 값 → Date로 변환
       const depDate = new Date(depManual.value);
-      const arrDate = arrManual.value ? new Date(arrManual.value) : null;
-
-      // ✅ 시트 저장용 문자열(분까지만)
-      const departureTime = toSheetTimeString(depDate);
-      const arrivalTime = arrDate ? toSheetTimeString(arrDate) : "";
+      const arrDate = (arrManual && arrManual.value) ? new Date(arrManual.value) : null;
 
       const payload = {
         car,
         driver,
-        departureTime,
-        arrivalTime,
+        departureTime: toSheetTimeString(depDate),
+        arrivalTime: arrDate ? toSheetTimeString(arrDate) : "",
         parkingSpot: selectedSpot,
       };
 
-      // ✅ POST는 no-cors로 전송만
       await fetch(base, {
         method: "POST",
         mode: "no-cors",
@@ -195,40 +188,32 @@
         document.querySelectorAll(".spot").forEach((b) => b.classList.remove("selected"));
         btn.classList.add("selected");
         selectedSpot = btn.dataset.spot;
-        spotPreview.textContent = "선택된 위치: " + selectedSpot;
+        if (spotPreview) spotPreview.textContent = "선택된 위치: " + selectedSpot;
       });
     });
 
-    spotClear.addEventListener("click", () => {
-      selectedSpot = "";
-      document.querySelectorAll(".spot").forEach((b) => b.classList.remove("selected"));
-      spotPreview.textContent = "선택된 위치: 없음";
-    });
+    if (spotClear) {
+      spotClear.addEventListener("click", () => {
+        selectedSpot = "";
+        document.querySelectorAll(".spot").forEach((b) => b.classList.remove("selected"));
+        if (spotPreview) spotPreview.textContent = "선택된 위치: 없음";
+      });
+    }
   }
 
   // events
-  depNow.addEventListener("click", () => {
-    // ✅ 현재시간 누르면 입력칸에 값이 들어가서 "칸 안에" 보임
-    depManual.value = toDatetimeLocalValue(new Date());
-  });
+  if (depNow) depNow.addEventListener("click", () => (depManual.value = toDatetimeLocalValue(new Date())));
+  if (arrNow) arrNow.addEventListener("click", () => (arrManual.value = toDatetimeLocalValue(new Date())));
 
-  arrNow.addEventListener("click", () => {
-    arrManual.value = toDatetimeLocalValue(new Date());
-  });
+  if (depManualToggle) depManualToggle.addEventListener("click", () => toggleManual(depManual, depManualToggle));
+  if (arrManualToggle) arrManualToggle.addEventListener("click", () => toggleManual(arrManual, arrManualToggle));
 
-  depManualToggle.addEventListener("click", () => toggleManual(depManual, depManualToggle));
-  arrManualToggle.addEventListener("click", () => toggleManual(arrManual, arrManualToggle));
-
-  toggleIntegr.addEventListener("click", () => {
-    integrPanel.classList.toggle("hidden");
-  });
-
-  saveBtn.addEventListener("click", () => saveLog());
+  if (toggleIntegr) toggleIntegr.addEventListener("click", () => integrPanel.classList.toggle("hidden"));
+  if (saveBtn) saveBtn.addEventListener("click", () => saveLog());
 
   // boot
+  showSaving(false); // ✅ 접속 즉시 저장 오버레이 강제 OFF
   setBadge(true);
   initSpots();
-  loadLists().catch((e) => {
-    showToast("목록 조회 실패: " + (e && e.message ? e.message : "unknown"), false);
-  });
+  loadLists().catch((e) => showToast("목록 조회 실패: " + (e && e.message ? e.message : "unknown"), false));
 })();
