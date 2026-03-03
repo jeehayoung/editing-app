@@ -36,11 +36,13 @@
     setTimeout(() => (toast.textContent = ""), 2500);
   }
 
+  // ✅ overlay는 class + hidden 속성을 같이 제어 (Safari 캐시/스타일 꼬임 대비)
   function showSaving(on) {
-    // ✅ 요소가 없어서 JS가 죽는 경우 방지
-    if (savingOverlay) savingOverlay.classList.toggle("hidden", !on);
+    if (savingOverlay) {
+      savingOverlay.hidden = !on;
+      savingOverlay.classList.toggle("hidden", !on);
+    }
 
-    // 버튼/입력 잠금
     if (saveBtn) saveBtn.disabled = on;
     if (depNow) depNow.disabled = on;
     if (arrNow) arrNow.disabled = on;
@@ -50,10 +52,6 @@
     document.querySelectorAll(".spot").forEach((b) => (b.disabled = on));
 
     if (saveBtn) saveBtn.textContent = on ? "저장 중…" : "기록 저장";
-  }
-
-  function getApiUrl() {
-    return DEFAULT_API_URL;
   }
 
   function setBadge(connected) {
@@ -128,9 +126,8 @@
   }
 
   async function loadLists() {
-    const base = getApiUrl();
+    const base = DEFAULT_API_URL;
     setBadge(!!base);
-
     if (apiUrlInput) apiUrlInput.value = base;
 
     const carsRes = await fetchJSONP(base + "?action=cars");
@@ -146,7 +143,7 @@
     showSaving(true);
 
     try {
-      const base = getApiUrl();
+      const base = DEFAULT_API_URL;
       const car = carSelect ? carSelect.value : "";
       const driver = driverSelect ? driverSelect.value : "";
 
@@ -211,8 +208,9 @@
   if (toggleIntegr) toggleIntegr.addEventListener("click", () => integrPanel.classList.toggle("hidden"));
   if (saveBtn) saveBtn.addEventListener("click", () => saveLog());
 
-  // boot
-  showSaving(false); // ✅ 접속 즉시 저장 오버레이 강제 OFF
+  // ✅ BOOT: 접속 즉시 오버레이 강제 OFF (Safari 캐시 꼬임 대비)
+  showSaving(false);
+
   setBadge(true);
   initSpots();
   loadLists().catch((e) => showToast("목록 조회 실패: " + (e && e.message ? e.message : "unknown"), false));
