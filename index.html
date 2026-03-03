@@ -4,17 +4,22 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>모인컴퍼니 법인차량관리</title>
-  <link rel="stylesheet" href="./styles.css" />
+
+  <!-- ✅ Safari 캐시 깨기 -->
+  <link rel="stylesheet" href="./styles.css?v=20260303_2" />
 </head>
 <body>
   <main class="container">
     <header class="header">
       <h1>모인컴퍼니 법인차량관리</h1>
-      <p class="sub">민원 관리를 위한 법인 차량 이용 기록에 함께 해주세요</p>
+      <p class="sub">지하주차장 내 이중 주차 시, 원활한 통행을 위해 재주차를 부탁드립니다.<br>
+  차량 앞면 연락처 비치 여부를 다시 한번 확인해 주세요.<br>
+  주차 민원 예방을 위해 법인 차량 이용 기록 작성에 동참해 주세요.
+</p>
     </header>
 
     <section class="card">
-      <h2>이용 기록 등록</h2>
+      <h2>이용 등록</h2>
 
       <label class="label">차량</label>
       <select id="carSelect" class="input">
@@ -32,7 +37,6 @@
           <button id="depNow" class="btn primary" type="button">현재시간</button>
           <button id="depManualToggle" class="btn" type="button">직접입력</button>
         </div>
-        <!-- 기본은 읽기전용(표시는 되지만 직접 수정은 못함) -->
         <input id="depManual" class="input" type="datetime-local" readonly />
         <div class="hint">현재시간 버튼을 누르면 입력칸에 자동으로 기록됩니다.</div>
       </div>
@@ -51,7 +55,7 @@
       <div class="hint">아래 버튼 맵에서 위치를 탭하세요.</div>
 
       <div class="parking-map">
-        <div class="map-label top">지하1층 건물입구</div>
+        <div class="map-label top">건물입구</div>
 
         <button class="spot" data-spot="B1" style="grid-area:b1" type="button">B1</button>
         <button class="spot" data-spot="C1" style="grid-area:c1" type="button">C1</button>
@@ -81,12 +85,10 @@
         <button id="spotClear" class="btn small" type="button">선택 취소</button>
       </div>
 
-      <button id="saveBtn" class="btn primary full" type="button">
-        기록 저장
-      </button>
+      <button id="saveBtn" class="btn primary full" type="button">기록 저장</button>
 
-      <!-- 저장중 오버레이 -->
-      <div id="savingOverlay" class="overlay hidden" aria-live="polite">
+      <!-- ✅ class가 꼬여도 무조건 숨기기 위해 hidden 속성을 기본값으로 -->
+      <div id="savingOverlay" class="overlay hidden" hidden aria-live="polite">
         <div class="overlay-box">
           <div class="spinner" aria-hidden="true"></div>
           <div class="overlay-text">저장 중…</div>
@@ -96,7 +98,6 @@
       <div id="toast" class="toast" aria-live="polite"></div>
     </section>
 
-    <!-- 연동 설정은 자동으로 처리되지만, 혹시 확인/교체를 위해 남겨둠 -->
     <section class="card">
       <button id="toggleIntegr" class="accordion" type="button">
         Google Drive 연동 설정 <span id="statusBadge" class="badge on">자동 연동</span>
@@ -104,12 +105,13 @@
       <div id="integrPanel" class="panel hidden">
         <label class="label">Apps Script Web App URL</label>
         <input id="apiUrl" class="input" readonly />
-        <button id="saveUrlBtn" class="btn full" type="button" disabled>연동 URL 저장(자동)</button>
+        <button class="btn full" type="button" disabled>연동 URL 저장(자동)</button>
         <div class="hint">이 사이트는 고정 URL로 자동 연동됩니다.</div>
       </div>
     </section>
   </main>
 
-  <script src="./app.js"></script>
+  <!-- ✅ Safari 캐시 깨기 -->
+  <script src="./app.js?v=20260303_2"></script>
 </body>
 </html>
