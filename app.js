@@ -3,6 +3,7 @@
 
   const carSelect = $("carSelect");
   const driverSelect = $("driverSelect");
+
   const depNow = $("depNow");
   const arrNow = $("arrNow");
   const depManualToggle = $("depManualToggle");
@@ -43,7 +44,7 @@
     statusBadge.textContent = connected ? "연동됨" : "미연동";
   }
 
-  function fmtKoreanNow(d) {
+  function fmtKorean(d) {
     const yy = d.getFullYear();
     const mm = d.getMonth() + 1;
     const dd = d.getDate();
@@ -59,25 +60,43 @@
 
   function setDeparture(iso) {
     departureTime = iso;
-    depPreview.textContent = "선택값: " + fmtKoreanNow(new Date(iso));
+    depPreview.textContent = "선택값: " + fmtKorean(new Date(iso));
   }
 
   function setArrival(iso) {
     arrivalTime = iso;
-    arrPreview.textContent = "선택값: " + fmtKoreanNow(new Date(iso));
+    arrPreview.textContent = "선택값: " + fmtKorean(new Date(iso));
   }
 
   function toggleManual(inputEl, btnEl) {
-    const on = inputEl.disabled;
-    inputEl.disabled = !on ? true : false;
-    btnEl.classList.toggle("primary", on);
-    if (on) inputEl.focus();
+    const willEnable = inputEl.disabled; // true면 켜는 상태
+    inputEl.disabled = !willEnable ? true : false;
+    btnEl.classList.toggle("primary", willEnable);
+    if (willEnable) inputEl.focus();
   }
 
-  async function fetchJSON(url) {
-    const res = await fetch(url, { method: "GET" });
-    if (!res.ok) throw new Error("HTTP " + res.status);
-    return res.json();
+  // ✅ JSONP: CORS 우회 (script tag로 불러옴)
+  function fetchJSONP(url) {
+    return new Promise((resolve, reject) => {
+      const cbName = "cb_" + Math.random().toString(36).slice(2);
+      const script = document.createElement("script");
+      const sep = url.includes("?") ? "&" : "?";
+
+      window[cbName] = (data) => {
+        resolve(data);
+        delete window[cbName];
+        script.remove();
+      };
+
+      script.onerror = () => {
+        reject(new Error("Failed to fetch (JSONP)"));
+        delete window[cbName];
+        script.remove();
+      };
+
+      script.src = url + sep + "callback=" + cbName;
+      document.body.appendChild(script);
+    });
   }
 
   function fillSelect(selectEl, items, placeholder) {
@@ -87,7 +106,7 @@
     opt0.textContent = placeholder;
     selectEl.appendChild(opt0);
 
-    items.forEach((v) => {
+    (items || []).forEach((v) => {
       const opt = document.createElement("option");
       opt.value = v;
       opt.textContent = v;
@@ -106,11 +125,12 @@
 
     setBadge(true);
 
-    const cars = await fetchJSON(base + "?action=cars");
-    const drivers = await fetchJSON(base + "?action=drivers");
+    // ✅ GET은 JSONP로 호출 (CORS 회피)
+    const carsRes = await fetchJSONP(base + "?action=cars");
+    const driversRes = await fetchJSONP(base + "?action=drivers");
 
-    fillSelect(carSelect, cars.cars || [], "차량 선택");
-    fillSelect(driverSelect, drivers.drivers || [], "운전자 선택");
+    fillSelect(carSelect, carsRes.cars || [], "차량 선택");
+    fillSelect(driverSelect, driversRes.drivers || [], "운전자 선택");
   }
 
   async function saveLog() {
@@ -143,17 +163,18 @@
       parkingSpot: selectedSpot,
     };
 
-    const res = await fetch(base, {
-      method: "POST",
-      headers: { "Content-Type": "text/plain;charset=utf-8" },
-      body: JSON.stringify(payload),
-    });
-
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok || data.ok === false) {
-      return showToast("저장 실패: " + (data.error || res.status), false);
+    // ✅ POST는 no-cors로 "전송"만 (브라우저가 응답을 막을 수 있어서)
+    try {
+      await fetch(base, {
+        method: "POST",
+        mode: "no-cors",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify(payload),
+      });
+      showToast("저장 요청 전송 완료! (시트에서 저장 여부 확인)", true);
+    } catch (e) {
+      showToast("저장 전송 실패: " + (e && e.message ? e.message : "unknown"), false);
     }
-    showToast("저장 완료! (" + (data.sheet || "") + ")", true);
   }
 
   function initSpots() {
@@ -188,10 +209,15 @@
     if (!v) return showToast("URL을 입력해줘!", false);
     localStorage.setItem("apps_script_url", v);
     showToast("연동 URL 저장 완료!", true);
-    await loadLists().catch((e) => showToast("목록 조회 실패: " + e.message, false));
+
+    try {
+      await loadLists();
+    } catch (e) {
+      showToast("목록 조회 실패: " + (e && e.message ? e.message : "unknown"), false);
+    }
   });
 
-  saveBtn.addEventListener("click", () => saveLog().catch((e) => showToast("저장 실패: " + e.message, false)));
+  saveBtn.addEventListener("click", () => saveLog());
 
   // boot
   apiUrlInput.value = getApiUrl();
