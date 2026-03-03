@@ -3,78 +3,75 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>모인컴퍼니 법인차량 관리</title>
+  <title>모인컴퍼니 법인차량관리</title>
   <link rel="stylesheet" href="./styles.css" />
 </head>
 <body>
   <main class="container">
     <header class="header">
-      <h1>법인 차량 기록</h1>
-      <p class="sub">모바일 전용 입력 화면</p>
+      <h1>모인컴퍼니 법인차량관리</h1>
+      <p class="sub">민원 관리를 위한 법인 차량 이용 기록에 함께 해주세요</p>
     </header>
 
     <section class="card">
-      <h2>이용 등록</h2>
+      <h2>이용 기록 등록</h2>
 
       <label class="label">차량</label>
       <select id="carSelect" class="input">
-        <option value="">연동 URL 저장 후 차량 조회</option>
+        <option value="">차량 목록 불러오는 중…</option>
       </select>
 
       <label class="label">운전자</label>
       <select id="driverSelect" class="input">
-        <option value="">연동 URL 저장 후 운전자 조회</option>
+        <option value="">운전자 목록 불러오는 중…</option>
       </select>
 
       <div class="row">
-        <div class="col">
-          <label class="label">출차 시간</label>
-          <div class="btnrow">
-            <button id="depNow" class="btn primary" type="button">현재시간</button>
-            <button id="depManualToggle" class="btn" type="button">직접입력</button>
-          </div>
-          <input id="depManual" class="input" type="datetime-local" disabled />
-          <div id="depPreview" class="hint">선택값: 없음</div>
+        <label class="label">출차 시간</label>
+        <div class="btnrow">
+          <button id="depNow" class="btn primary" type="button">현재시간</button>
+          <button id="depManualToggle" class="btn" type="button">직접입력</button>
         </div>
+        <!-- 기본은 읽기전용(표시는 되지만 직접 수정은 못함) -->
+        <input id="depManual" class="input" type="datetime-local" readonly />
+        <div class="hint">현재시간 버튼을 누르면 입력칸에 자동으로 기록됩니다.</div>
       </div>
 
       <div class="row">
-        <div class="col">
-          <label class="label">입차 시간</label>
-          <div class="btnrow">
-            <button id="arrNow" class="btn primary" type="button">현재시간</button>
-            <button id="arrManualToggle" class="btn" type="button">직접입력</button>
-          </div>
-          <input id="arrManual" class="input" type="datetime-local" disabled />
-          <div id="arrPreview" class="hint">선택값: 없음</div>
+        <label class="label">입차 시간</label>
+        <div class="btnrow">
+          <button id="arrNow" class="btn primary" type="button">현재시간</button>
+          <button id="arrManualToggle" class="btn" type="button">직접입력</button>
         </div>
+        <input id="arrManual" class="input" type="datetime-local" readonly />
+        <div class="hint">입차는 늦게 기록될 수 있어 직접입력도 가능합니다.</div>
       </div>
 
       <label class="label">주차 위치 선택</label>
       <div class="hint">아래 버튼 맵에서 위치를 탭하세요.</div>
 
       <div class="parking-map">
-        <div class="map-label top">건물입구</div>
+        <div class="map-label top">지하1층 건물입구</div>
 
-        <button class="spot" data-spot="B1" style="grid-area:b1">B1</button>
-        <button class="spot" data-spot="C1" style="grid-area:c1">C1</button>
+        <button class="spot" data-spot="B1" style="grid-area:b1" type="button">B1</button>
+        <button class="spot" data-spot="C1" style="grid-area:c1" type="button">C1</button>
 
-        <button class="spot" data-spot="A1" style="grid-area:a1">A1</button>
-        <button class="spot" data-spot="B2" style="grid-area:b2">B2</button>
-        <button class="spot" data-spot="C2" style="grid-area:c2">C2</button>
-        <button class="spot" data-spot="D1" style="grid-area:d1">D1</button>
+        <button class="spot" data-spot="A1" style="grid-area:a1" type="button">A1</button>
+        <button class="spot" data-spot="B2" style="grid-area:b2" type="button">B2</button>
+        <button class="spot" data-spot="C2" style="grid-area:c2" type="button">C2</button>
+        <button class="spot" data-spot="D1" style="grid-area:d1" type="button">D1</button>
 
-        <button class="spot" data-spot="A2" style="grid-area:a2">A2</button>
-        <button class="spot" data-spot="D2" style="grid-area:d2">D2</button>
+        <button class="spot" data-spot="A2" style="grid-area:a2" type="button">A2</button>
+        <button class="spot" data-spot="D2" style="grid-area:d2" type="button">D2</button>
 
-        <button class="spot" data-spot="A3" style="grid-area:a3">A3</button>
-        <button class="spot" data-spot="D3" style="grid-area:d3">D3</button>
+        <button class="spot" data-spot="A3" style="grid-area:a3" type="button">A3</button>
+        <button class="spot" data-spot="D3" style="grid-area:d3" type="button">D3</button>
 
-        <button class="spot" data-spot="A4" style="grid-area:a4">A4</button>
-        <button class="spot" data-spot="D4" style="grid-area:d4">D4</button>
+        <button class="spot" data-spot="A4" style="grid-area:a4" type="button">A4</button>
+        <button class="spot" data-spot="D4" style="grid-area:d4" type="button">D4</button>
 
-        <button class="spot" data-spot="D5" style="grid-area:d5">D5</button>
-        <button class="spot" data-spot="D6" style="grid-area:d6">D6</button>
+        <button class="spot" data-spot="D5" style="grid-area:d5" type="button">D5</button>
+        <button class="spot" data-spot="D6" style="grid-area:d6" type="button">D6</button>
 
         <div class="map-label bottom">주차장입구</div>
       </div>
@@ -84,19 +81,31 @@
         <button id="spotClear" class="btn small" type="button">선택 취소</button>
       </div>
 
-      <button id="saveBtn" class="btn primary full" type="button">기록 저장</button>
+      <button id="saveBtn" class="btn primary full" type="button">
+        기록 저장
+      </button>
+
+      <!-- 저장중 오버레이 -->
+      <div id="savingOverlay" class="overlay hidden" aria-live="polite">
+        <div class="overlay-box">
+          <div class="spinner" aria-hidden="true"></div>
+          <div class="overlay-text">저장 중…</div>
+        </div>
+      </div>
+
       <div id="toast" class="toast" aria-live="polite"></div>
     </section>
 
+    <!-- 연동 설정은 자동으로 처리되지만, 혹시 확인/교체를 위해 남겨둠 -->
     <section class="card">
       <button id="toggleIntegr" class="accordion" type="button">
-        Google Drive 연동 설정 <span id="statusBadge" class="badge off">미연동</span>
+        Google Drive 연동 설정 <span id="statusBadge" class="badge on">자동 연동</span>
       </button>
       <div id="integrPanel" class="panel hidden">
         <label class="label">Apps Script Web App URL</label>
-        <input id="apiUrl" class="input" placeholder="https://script.google.com/macros/s/.../exec" />
-        <button id="saveUrlBtn" class="btn full" type="button">연동 URL 저장</button>
-        <div class="hint">URL 저장 후 차량/운전자 목록이 자동 조회됩니다.</div>
+        <input id="apiUrl" class="input" readonly />
+        <button id="saveUrlBtn" class="btn full" type="button" disabled>연동 URL 저장(자동)</button>
+        <div class="hint">이 사이트는 고정 URL로 자동 연동됩니다.</div>
       </div>
     </section>
   </main>
