@@ -107,3 +107,28 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo"
 @keyframes spin { to { transform: rotate(360deg); } }
 
 .btn[disabled]{opacity:0.65}
+
+/* 공지사항 스타일 (헤더 안내 박스) */
+.sub.notice{
+  margin-top: 12px;
+  background: #ffffff;
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--primary);
+  padding: 14px 14px;
+  border-radius: 12px;
+  color: var(--text);
+  line-height: 1.35;
+}
+
+.sub.notice b{
+  color: var(--primary);
+}
+
+.sub.notice .notice-item{
+  display: block;
+  padding: 6px 0;
+}
+
+.sub.notice .notice-item + .notice-item{
+  border-top: 1px dashed var(--border);
+}
