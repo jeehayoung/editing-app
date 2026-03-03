@@ -33,8 +33,9 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo"
 .accordion{width:100%;text-align:left;border:0;background:transparent;font-size:16px;font-weight:900;display:flex;align-items:center;justify-content:space-between}
 .panel{margin-top:12px}
 
-/* ✅ 캐시/충돌에도 무조건 숨김이 먹게 */
+/* ✅ 어떤 상황에서도 숨김이 우선 */
 .hidden{display:none !important;}
+[hidden]{display:none !important;}
 
 .badge{font-size:12px;padding:4px 8px;border-radius:999px;border:1px solid var(--border)}
 .badge.on{background:#dcfce7;border-color:#86efac}
@@ -76,7 +77,7 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo"
 
 .toast{margin-top:10px;font-weight:800}
 
-/* 저장중 오버레이 */
+/* 오버레이 */
 .overlay{
   position:absolute;
   inset:0;
@@ -97,19 +98,12 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo"
   border-radius:14px;
   background:#fff;
 }
-.overlay-text{
-  font-weight:900;
-}
+.overlay-text{font-weight:900}
 .spinner{
-  width:28px;
-  height:28px;
-  border-radius:50%;
-  border:3px solid #cbd5e1;
-  border-top-color: var(--primary);
+  width:28px;height:28px;border-radius:50%;
+  border:3px solid #cbd5e1;border-top-color: var(--primary);
   animation: spin 0.9s linear infinite;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
 
-.btn[disabled]{
-  opacity:0.65;
-}
+.btn[disabled]{opacity:0.65}
