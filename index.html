@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>모인 법인차량 입출관리</title>
+<title>모인컴퍼니 법인차량 관리</title>
 
 <link rel="stylesheet" as="style" crossorigin
 href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css" />
@@ -16,7 +16,7 @@ href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretend
   <div class="topbar-inner">
     <div class="brand">
       <span class="dot"></span>
-      <span class="brand-title">모인 법인차량 입출관리</span>
+      <span class="brand-title">법인차량 기록</span>
     </div>
     <div class="topbar-meta">
       <span class="pill ok">즉시 로딩 모드</span>
@@ -47,7 +47,7 @@ href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretend
       <div class="status-value" id="statusCarnivalValue">사용 가능</div>
     </div>
   </div>
-  <div class="hint">* 상태는 최근 저장 내역으로 표시됩니다.</div>
+  <div class="hint">* 상태는 최근 저장 내역(이 기기 기준)로 표시됩니다.</div>
 </section>
 
 <section class="card">
@@ -57,7 +57,10 @@ href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretend
     <button id="modeReturn" class="btn full" type="button">입차 등록</button>
   </div>
   <div class="steps" id="modeHint">
-    <span class="step on">출/입 기록에 맞춰 선택해 아래 내용 입력 해주세요.</span>
+    <span class="step on">1 차량</span>
+    <span class="step on">2 출차운전자</span>
+    <span class="step on">3 출차시간</span>
+    <span class="step on">4 저장</span>
   </div>
   <div class="hint" id="netHint"></div>
 </section>
@@ -79,11 +82,11 @@ href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretend
     <div class="row">
       <label class="label">출차 시간</label>
       <div class="btnrow">
-        <button id="depNow" class="btn primary" type="button">현재시간입력</button>
+        <button id="depNow" class="btn primary" type="button">현재시간</button>
         <button id="depManualToggle" class="btn" type="button">직접입력</button>
       </div>
       <input id="depManual" class="input" type="datetime-local" readonly />
-      <div class="hint">출차시 바로 기록해주시고 늦게 기록한 경우 직접입력해주세요.</div>
+      <div class="hint">늦게 기록할 땐 직접입력으로 수정.</div>
     </div>
   </div>
 
@@ -96,18 +99,18 @@ href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretend
     <div class="row">
       <label class="label">입차 시간</label>
       <div class="btnrow">
-        <button id="arrNow" class="btn primary" type="button">현재시간입력</button>
+        <button id="arrNow" class="btn primary" type="button">현재시간</button>
         <button id="arrManualToggle" class="btn" type="button">직접입력</button>
       </div>
       <input id="arrManual" class="input" type="datetime-local" readonly />
-      <div class="hint">입차시 바로 기록해주시고 늦게 기록한 경우 직접입력해주세요.</div>
+      <div class="hint">직퇴/외근으로 하루 이상 지나도 입력 OK.</div>
     </div>
 
     <label class="label">주차 위치</label>
     <div class="hint">입차 등록에서만 필요합니다.</div>
 
     <div class="parking-map">
-      <div class="map-label top">B1건물입구</div>
+      <div class="map-label top">건물입구</div>
 
       <button class="spot" data-spot="B1" style="grid-area:b1" type="button">B1</button>
       <button class="spot" data-spot="C1" style="grid-area:c1" type="button">C1</button>
@@ -168,7 +171,7 @@ href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretend
 </section>
 
 <section class="footer">
-  모인컴퍼니 차량관리 v1.1
+  모인컴퍼니 차량관리 · 즉시 로딩 버전
 </section>
 
 </main>
