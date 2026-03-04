@@ -3,8 +3,8 @@
     "https://script.google.com/macros/s/AKfycbxc1vHrMpPMWKUO5mVSu7PVBm7voHgo5-sX5Me6swdrVQtwIQY6QU3WnS45UXnnALgI/exec";
 
   // ✅ 고정 목록(즉시 렌더)
-  const CARS = ["산타페", "카니발"];
-  const DRIVERS = ["이준호", "강인재", "나가온", "지하영", "김태황"];
+  const CARS = ["산타페 214서 4346", "카니발 41루 5831"];
+  const DRIVERS = ["이준호", "강인재", "김태황", "나가온", "지하영", "백진희"];
 
   const $ = (id) => document.getElementById(id);
 
