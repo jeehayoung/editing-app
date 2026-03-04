@@ -457,3 +457,27 @@ background:#000;
   font-size:9px;
   white-space:nowrap;
 }
+/* 모바일에서 datetime-local 박스가 프레임 밖으로 튀는 현상 보정 */
+.input[type="datetime-local"]{
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  font-size: 16px;        /* iOS 확대 방지(16px 미만이면 자동 줌) */
+  padding: 12px 14px;
+  height: 52px;           /* 버튼/카드 리듬 맞춤 */
+  border-radius: 12px;
+}
+
+/* 버튼이 2개 나란히 있을 때 가로폭 넘침 방지 */
+.btnrow{
+  flex-wrap: wrap;
+}
+
+.btnrow .btn{
+  flex: 1 1 140px;        /* 화면이 좁으면 줄바꿈 */
+  min-width: 0;
+}
+.input[type="datetime-local"]{
+  text-align: center;
+  font-weight: 700;
+}
