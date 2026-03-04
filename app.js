@@ -2,7 +2,7 @@
   const API_URL =
     "https://script.google.com/macros/s/AKfycbxc1vHrMpPMWKUO5mVSu7PVBm7voHgo5-sX5Me6swdrVQtwIQY6QU3WnS45UXnnALgI/exec";
 
-  // ✅ GET 안 쓰는 초경량: 여기에만 추가/수정하면 됨
+  // ✅ 하영님 기준 값
   const CARS = ["산타페 214서 4346", "카니발 41루 5831"];
   const DRIVERS = ["이준호", "강인재", "김태황", "나가온", "지하영", "백진희"];
 
@@ -36,13 +36,13 @@
   const savingText = $("savingText");
 
   const recentList = $("recentList");
+  const modePill = $("modePill");
 
   let mode = "checkout";
   let selectedSpot = "";
   let busy = false;
 
-  // local cache for recent (device only)
-  const CACHE_KEY = "moin_recent_v1";
+  const CACHE_KEY = "moin_recent_trip_v1";
   const cache = readCache();
 
   function readCache() {
@@ -71,6 +71,7 @@
       savingOverlay.hidden = !on;
       savingOverlay.classList.toggle("hidden", !on);
     }
+
     saveBtn.disabled = on;
     modeCheckoutBtn.disabled = on;
     modeReturnBtn.disabled = on;
@@ -112,6 +113,7 @@
     returnSection.hidden = isCheckout;
 
     saveBtn.textContent = isCheckout ? "출차 저장" : "입차 저장";
+    if (modePill) modePill.textContent = isCheckout ? "출차" : "입차";
 
     if (isCheckout) clearSpot();
   }
@@ -159,6 +161,26 @@
     if (spotClear) spotClear.addEventListener("click", clearSpot);
   }
 
+  // ✅ JSONP call (GET only on save/cancel, not on load)
+  function jsonpCall(url) {
+    return new Promise((resolve, reject) => {
+      const cb = "cb_" + Math.random().toString(36).slice(2);
+      const script = document.createElement("script");
+      window[cb] = (data) => {
+        resolve(data);
+        delete window[cb];
+        script.remove();
+      };
+      script.onerror = () => {
+        reject(new Error("jsonp error"));
+        delete window[cb];
+        script.remove();
+      };
+      script.src = url + (url.includes("?") ? "&" : "?") + "callback=" + cb;
+      document.body.appendChild(script);
+    });
+  }
+
   function addRecent(item) {
     cache.recent = [item, ...(cache.recent || [])].slice(0, 5);
     writeCache();
@@ -175,19 +197,12 @@
     }
 
     recentList.innerHTML = list.map((it) => {
-      const tagClass = it.mode === "checkout" ? "checkout" : (it.mode === "return" ? "return" : "checkout");
-      const tagText = it.mode === "checkout" ? "출차" : (it.mode === "return" ? "입차" : "기록");
+      const tagClass = it.mode === "checkout" ? "checkout" : "return";
+      const tagText = it.mode === "checkout" ? "출차" : "입차";
 
-      const lines = [
-        `${it.car || ""}`,
-        it.mode === "checkout"
-          ? `출차: ${it.departureTime || ""} / ${it.departureDriver || ""}`
-          : `입차: ${it.arrivalTime || ""} / ${it.arrivalDriver || ""} / ${it.parkingSpot || ""}`
-      ].join("<br>");
-
-      const cancelBtn = it.recordId
-        ? `<button class="btn danger" type="button" data-cancel="${it.recordId}">취소</button>`
-        : "";
+      const main = it.mode === "checkout"
+        ? `출차: ${it.departureTime} / ${it.departureDriver}`
+        : `입차: ${it.arrivalTime} / ${it.arrivalDriver} / ${it.parkingSpot}`;
 
       return `
         <div class="recent-item">
@@ -195,92 +210,115 @@
             <span class="tag ${tagClass}">${tagText}</span>
             <span style="font-size:12px;color:#6b7280">${it.recordId || ""}</span>
           </div>
-          <div class="recent-body">${lines}</div>
-          <div class="recent-actions">${cancelBtn}</div>
+          <div class="recent-body">
+            ${it.car}<br>${main}
+          </div>
+          <div class="recent-actions">
+            <button class="btn danger" type="button" data-cancel="${it.recordId}">취소</button>
+          </div>
         </div>
       `;
     }).join("");
 
-    // bind cancel buttons
     recentList.querySelectorAll("[data-cancel]").forEach((btn) => {
-      btn.addEventListener("click", async () => {
-        const rid = btn.getAttribute("data-cancel");
-        const cancelUser = (mode === "checkout" ? depDriverSelect.value : arrDriverSelect.value) || "미상";
-
-        if (!rid) return;
-
-        showBusy(true, "취소 처리 중…");
-        try {
-          await postNoCors({ mode:"cancel", recordId: rid, cancelUser });
-
-          // remove from list immediately
-          cache.recent = (cache.recent || []).filter(x => x.recordId !== rid);
-          writeCache();
-          renderRecent();
-
-          showToast("취소 처리 완료!", true);
-        } catch (e) {
-          showToast("취소 실패(네트워크): 다시 시도해줘", false);
-        } finally {
-          showBusy(false);
-        }
-      });
+      btn.addEventListener("click", cancelRecord);
     });
   }
 
-  async function postNoCors(payload) {
-    // POST는 no-cors로 전송만 (응답 읽지 않음)
-    await fetch(API_URL, {
-      method: "POST",
-      mode: "no-cors",
-      headers: { "Content-Type": "text/plain;charset=utf-8" },
-      body: JSON.stringify(payload),
-    });
+  async function checkout() {
+    const car = carSelect.value;
+    const depDriver = depDriverSelect.value;
+
+    if (!car) throw new Error("차량을 선택해줘!");
+    if (!depDriver) throw new Error("출차 운전자를 선택해줘!");
+    if (!depManual.value) depManual.value = toDatetimeLocalValue(new Date());
+    const departureTime = toSheetTimeString(new Date(depManual.value));
+
+    const url =
+      API_URL +
+      `?action=checkout` +
+      `&car=${encodeURIComponent(car)}` +
+      `&departureTime=${encodeURIComponent(departureTime)}` +
+      `&departureDriver=${encodeURIComponent(depDriver)}`;
+
+    const res = await jsonpCall(url);
+    if (!res || res.ok !== true) throw new Error(res && res.error ? res.error : "출차 저장 실패");
+
+    return { car, departureTime, departureDriver: depDriver, recordId: res.recordId };
+  }
+
+  async function returnCar() {
+    const car = carSelect.value;
+    const arrDriver = arrDriverSelect.value;
+
+    if (!car) throw new Error("차량을 선택해줘!");
+    if (!arrDriver) throw new Error("입차 운전자를 선택해줘!");
+    if (!arrManual.value) arrManual.value = toDatetimeLocalValue(new Date());
+    const arrivalTime = toSheetTimeString(new Date(arrManual.value));
+
+    if (!selectedSpot) throw new Error("주차 위치를 선택해줘!");
+    const parkingSpot = selectedSpot;
+
+    const url =
+      API_URL +
+      `?action=return` +
+      `&car=${encodeURIComponent(car)}` +
+      `&arrivalTime=${encodeURIComponent(arrivalTime)}` +
+      `&arrivalDriver=${encodeURIComponent(arrDriver)}` +
+      `&parkingSpot=${encodeURIComponent(parkingSpot)}`;
+
+    const res = await jsonpCall(url);
+    if (!res || res.ok !== true) throw new Error(res && res.error ? res.error : "입차 저장 실패");
+
+    return { car, arrivalTime, arrivalDriver: arrDriver, parkingSpot, recordId: res.recordId || "" };
+  }
+
+  async function cancelRecord(ev) {
+    const rid = ev.currentTarget.getAttribute("data-cancel");
+    const who =
+      (mode === "checkout" ? depDriverSelect.value : arrDriverSelect.value) ||
+      "미상";
+
+    if (!rid) return;
+
+    showBusy(true, "취소 처리 중…");
+    try {
+      const url =
+        API_URL +
+        `?action=cancel` +
+        `&recordId=${encodeURIComponent(rid)}` +
+        `&cancelUser=${encodeURIComponent(who)}`;
+
+      const res = await jsonpCall(url);
+      if (!res || res.ok !== true) throw new Error(res && res.error ? res.error : "취소 실패");
+
+      cache.recent = (cache.recent || []).filter(x => x.recordId !== rid);
+      writeCache();
+      renderRecent();
+
+      showToast("취소 처리 완료!", true);
+    } catch (e) {
+      showToast(e.message || "취소 실패", false);
+    } finally {
+      showBusy(false);
+    }
   }
 
   async function save() {
     if (busy) return;
-
-    showBusy(true, mode === "checkout" ? "열시미 저장중…" : "열시미 저장중…");
+    showBusy(true, "열시미 저장중…");
 
     try {
-      const car = carSelect.value;
-      if (!car) throw new Error("차량을 선택해줘!");
-
       if (mode === "checkout") {
-        const depDriver = depDriverSelect.value;
-        if (!depDriver) throw new Error("출차 운전자를 선택해줘!");
-        if (!depManual.value) depManual.value = toDatetimeLocalValue(new Date());
-
-        const departureTime = toSheetTimeString(new Date(depManual.value));
-
-        // send
-        await postNoCors({ mode:"checkout", car, departureTime, departureDriver: depDriver });
-
-        // recordId는 서버가 생성하지만 응답을 못 읽으니,
-        // 로컬에서도 "임시ID"를 만들어서 취소 가능하게 하려면 서버가 recordId를 반환해야 함.
-        // 그래서 여기서는 임시ID 대신 "서버 생성 recordId가 필요" → 취소 버튼은 recordId가 있을 때만 생성됨.
-        // (원하면 응답을 읽을 수 있는 방식으로도 바꿔줄 수 있어)
-        addRecent({ mode:"checkout", car, departureTime, departureDriver: depDriver, recordId: "" });
-
-        showToast("출차 저장 완료! (시트에서 기록ID 확인 가능)", true);
-        return;
+        const item = await checkout();
+        addRecent({ ...item, mode: "checkout" });
+        showToast("출차 저장 완료!", true);
+      } else {
+        const item = await returnCar();
+        addRecent({ ...item, mode: "return" });
+        clearSpot();
+        showToast("입차 저장 완료!", true);
       }
-
-      // return
-      const arrDriver = arrDriverSelect.value;
-      if (!arrDriver) throw new Error("입차 운전자를 선택해줘!");
-      if (!arrManual.value) arrManual.value = toDatetimeLocalValue(new Date());
-      const arrivalTime = toSheetTimeString(new Date(arrManual.value));
-
-      if (!selectedSpot) throw new Error("주차 위치를 선택해줘!");
-
-      await postNoCors({ mode:"return", car, arrivalTime, arrivalDriver: arrDriver, parkingSpot: selectedSpot });
-
-      clearSpot();
-      addRecent({ mode:"return", car, arrivalTime, arrivalDriver: arrDriver, parkingSpot: selectedSpot, recordId: "" });
-
-      showToast("입차 저장 완료!", true);
     } catch (e) {
       showToast(e.message || "저장 실패", false);
     } finally {
@@ -300,7 +338,7 @@
 
   saveBtn.addEventListener("click", save);
 
-  // boot (즉시)
+  // boot
   showBusy(false);
   fillSelect(carSelect, CARS, "차량 선택");
   fillSelect(depDriverSelect, DRIVERS, "출차 운전자 선택");
