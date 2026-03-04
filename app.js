@@ -4,8 +4,21 @@
 
   const $ = (id) => document.getElementById(id);
 
-  const carSelect = $("carSelect");
+  // top bar
+  const todayText = $("todayText");
+  const modePill = $("modePill");
 
+  // status
+  const statusSantaValue = $("statusSantaValue");
+  const statusCarnivalValue = $("statusCarnivalValue");
+
+  // mode
+  const modeCheckoutBtn = $("modeCheckout");
+  const modeReturnBtn = $("modeReturn");
+  const modeHint = $("modeHint");
+
+  // inputs
+  const carSelect = $("carSelect");
   const depDriverSelect = $("depDriverSelect");
   const arrDriverSelect = $("arrDriverSelect");
 
@@ -17,30 +30,43 @@
   const arrManualToggle = $("arrManualToggle");
   const arrManual = $("arrManual");
 
-  const modeCheckoutBtn = $("modeCheckout");
-  const modeReturnBtn = $("modeReturn");
-  const modeHint = $("modeHint");
-
   const checkoutSection = $("checkoutSection");
   const returnSection = $("returnSection");
 
+  const spotPreview = $("spotPreview");
+  const spotClear = $("spotClear");
+
+  // action
   const saveBtn = $("saveBtn");
   const toast = $("toast");
 
   const savingOverlay = $("savingOverlay");
   const savingText = $("savingText");
 
-  const spotPreview = $("spotPreview");
-  const spotClear = $("spotClear");
+  // recent
+  const recentList = $("recentList");
+  const refreshRecent = $("refreshRecent");
 
+  // integr panel
   const apiUrlInput = $("apiUrl");
   const toggleIntegr = $("toggleIntegr");
   const integrPanel = $("integrPanel");
-  const statusBadge = $("statusBadge");
 
-  let mode = "checkout"; // "checkout" | "return"
+  let mode = "checkout"; // checkout | return
   let selectedSpot = "";
   let busy = false;
+
+  // local recent cache: 차량별 마지막 출차/입차 상태 추정 (서버 조회 없이도 UX 강화)
+  const CACHE_KEY = "moin_vehicle_cache_v1";
+  const cache = readCache();
+
+  function readCache() {
+    try { return JSON.parse(localStorage.getItem(CACHE_KEY) || "{}"); }
+    catch { return {}; }
+  }
+  function writeCache(next) {
+    localStorage.setItem(CACHE_KEY, JSON.stringify(next || {}));
+  }
 
   function showToast(msg, ok = true) {
     toast.textContent = msg;
@@ -56,43 +82,60 @@
       savingOverlay.classList.toggle("hidden", !on);
     }
 
+    // disable core buttons
     saveBtn.disabled = on;
     modeCheckoutBtn.disabled = on;
     modeReturnBtn.disabled = on;
-
-    document.querySelectorAll("button, select, input").forEach((el) => {
-      // overlay를 켠 상태에서도 disabled 토글이 섞여버릴 수 있어서 save/mode만 제한적으로 관리
-    });
+    depNow.disabled = on;
+    arrNow.disabled = on;
+    depManualToggle.disabled = on;
+    arrManualToggle.disabled = on;
+    spotClear && (spotClear.disabled = on);
+    document.querySelectorAll(".spot").forEach((b) => (b.disabled = on));
   }
 
-  function setBadge(connected) {
-    statusBadge.className = "badge " + (connected ? "on" : "off");
-    statusBadge.textContent = connected ? "자동 연동" : "미연동";
+  function setToday() {
+    const d = new Date();
+    const mm = String(d.getMonth() + 1);
+    const dd = String(d.getDate());
+    todayText.textContent = `${mm}/${dd}`;
   }
 
-  function setMode(nextMode) {
-    mode = nextMode;
+  function setMode(next) {
+    mode = next;
 
     const isCheckout = mode === "checkout";
     modeCheckoutBtn.classList.toggle("primary", isCheckout);
     modeReturnBtn.classList.toggle("primary", !isCheckout);
 
-    // 섹션 토글: class + hidden 속성 2중
     checkoutSection.classList.toggle("hidden", !isCheckout);
     checkoutSection.hidden = !isCheckout;
 
     returnSection.classList.toggle("hidden", isCheckout);
     returnSection.hidden = isCheckout;
 
-    // 버튼 라벨
-    saveBtn.textContent = isCheckout ? "출차 저장" : "입차 저장";
-    modeHint.textContent = isCheckout
-      ? "출차 등록: 출차시간/출차운전자만 입력"
-      : "입차 등록: 입차시간/입차운전자 + 주차위치만 입력";
+    modePill.textContent = isCheckout ? "출차" : "입차";
+    modePill.classList.toggle("primary", true);
 
-    // 출차 모드에서는 주차 선택 필요 없음 → 선택 초기화해도 OK
+    // steps
     if (isCheckout) {
-      clearSpot();
+      modeHint.innerHTML = `
+        <span class="step on">1 차량</span>
+        <span class="step on">2 출차운전자</span>
+        <span class="step on">3 출차시간</span>
+        <span class="step on">4 저장</span>
+      `;
+      saveBtn.textContent = "출차 저장";
+      clearSpot(); // 출차는 주차위치 필요없음
+    } else {
+      modeHint.innerHTML = `
+        <span class="step on">1 차량</span>
+        <span class="step on">2 입차운전자</span>
+        <span class="step on">3 입차시간</span>
+        <span class="step on">4 주차위치</span>
+        <span class="step on">5 저장</span>
+      `;
+      saveBtn.textContent = "입차 저장";
     }
   }
 
@@ -105,7 +148,6 @@
     return `${yy}-${mm}-${dd}T${hh}:${mi}`;
   }
 
-  // ✅ 시트 저장용: YYYY/MM/DD HH:mm
   function toSheetTimeString(d) {
     const yy = d.getFullYear();
     const mm = String(d.getMonth() + 1).padStart(2, "0");
@@ -122,7 +164,7 @@
     if (willEnable) inputEl.focus();
   }
 
-  // JSONP
+  // JSONP (CORS 우회)
   function fetchJSONP(url) {
     return new Promise((resolve, reject) => {
       const cbName = "cb_" + Math.random().toString(36).slice(2);
@@ -161,23 +203,10 @@
     });
   }
 
-  async function loadLists() {
-    const base = DEFAULT_API_URL;
-    setBadge(!!base);
-    if (apiUrlInput) apiUrlInput.value = base;
-
-    const carsRes = await fetchJSONP(base + "?action=cars");
-    const driversRes = await fetchJSONP(base + "?action=drivers");
-
-    fillSelect(carSelect, carsRes.cars || [], "차량 선택");
-    fillSelect(depDriverSelect, driversRes.drivers || [], "출차 운전자 선택");
-    fillSelect(arrDriverSelect, driversRes.drivers || [], "입차 운전자 선택");
-  }
-
   function clearSpot() {
     selectedSpot = "";
     document.querySelectorAll(".spot").forEach((b) => b.classList.remove("selected"));
-    if (spotPreview) spotPreview.textContent = "선택된 위치: 없음";
+    spotPreview && (spotPreview.textContent = "선택된 위치: 없음");
   }
 
   function initSpots() {
@@ -186,13 +215,10 @@
         document.querySelectorAll(".spot").forEach((b) => b.classList.remove("selected"));
         btn.classList.add("selected");
         selectedSpot = btn.dataset.spot;
-        if (spotPreview) spotPreview.textContent = "선택된 위치: " + selectedSpot;
+        spotPreview && (spotPreview.textContent = "선택된 위치: " + selectedSpot);
       });
     });
-
-    if (spotClear) {
-      spotClear.addEventListener("click", () => clearSpot());
-    }
+    spotClear && spotClear.addEventListener("click", clearSpot);
   }
 
   async function postNoCors(payload) {
@@ -202,6 +228,81 @@
       headers: { "Content-Type": "text/plain;charset=utf-8" },
       body: JSON.stringify(payload),
     });
+  }
+
+  function parseQuery() {
+    const p = new URLSearchParams(location.search);
+    return {
+      car: p.get("car") || "",
+      mode: p.get("mode") || "", // checkout | return
+    };
+  }
+
+  function updateStatusUI() {
+    // cache format:
+    // cache[car] = { state: "미반납"|"사용가능", depTime, depDriver, arrTime, arrDriver, spot }
+    const santa = cache["산타페"];
+    const carnival = cache["카니발"];
+
+    statusSantaValue.textContent = formatStatus(santa);
+    statusCarnivalValue.textContent = formatStatus(carnival);
+  }
+
+  function formatStatus(c) {
+    if (!c || !c.state) return "사용 가능";
+    if (c.state === "미반납") {
+      const who = c.depDriver ? ` / ${c.depDriver}` : "";
+      const when = c.depTime ? `${c.depTime}` : "출차기록";
+      return `미반납 · ${when}${who}`;
+    }
+    return "사용 가능";
+  }
+
+  function pushRecent(event) {
+    // event: {type, car, time, driver, spot?}
+    const list = (cache.__recent || []);
+    list.unshift({ ...event, ts: Date.now() });
+    cache.__recent = list.slice(0, 5);
+    writeCache(cache);
+    renderRecent();
+    updateStatusUI();
+  }
+
+  function renderRecent() {
+    const list = cache.__recent || [];
+    if (!list.length) {
+      recentList.innerHTML = `<div class="hint">아직 기록이 없습니다.</div>`;
+      return;
+    }
+
+    recentList.innerHTML = list.map((it) => {
+      const tagClass = it.type === "checkout" ? "checkout" : "return";
+      const tagText = it.type === "checkout" ? "출차" : "입차";
+      const line1 = `<div class="recent-top"><span class="tag ${tagClass}">${tagText}</span><span class="mono">${it.time || ""}</span></div>`;
+      const line2 = `<div class="recent-body">${it.car} · ${it.driver}${it.spot ? ` · ${it.spot}` : ""}</div>`;
+      return `<div class="recent-card">${line1}${line2}</div>`;
+    }).join("");
+  }
+
+  async function loadLists() {
+    const base = DEFAULT_API_URL;
+    apiUrlInput && (apiUrlInput.value = base);
+
+    const carsRes = await fetchJSONP(base + "?action=cars");
+    const driversRes = await fetchJSONP(base + "?action=drivers");
+
+    fillSelect(carSelect, carsRes.cars || [], "차량 선택");
+    fillSelect(depDriverSelect, driversRes.drivers || [], "출차 운전자 선택");
+    fillSelect(arrDriverSelect, driversRes.drivers || [], "입차 운전자 선택");
+
+    // apply URL params (NFC)
+    const q = parseQuery();
+    if (q.mode === "checkout" || q.mode === "return") setMode(q.mode);
+    if (q.car) carSelect.value = q.car;
+
+    // status & recent from cache
+    updateStatusUI();
+    renderRecent();
   }
 
   function validateCommon() {
@@ -224,14 +325,24 @@
         if (!depManual.value) depManual.value = toDatetimeLocalValue(new Date());
         const depDate = new Date(depManual.value);
 
-        const payload = {
-          mode: "checkout",
-          car: car,
-          departureTime: toSheetTimeString(depDate),
-          departureDriver: depDriver,
-        };
+        const depTime = toSheetTimeString(depDate);
 
-        await postNoCors(payload);
+        await postNoCors({
+          mode: "checkout",
+          car,
+          departureTime: depTime,
+          departureDriver: depDriver,
+        });
+
+        // cache status
+        cache[car] = { state: "미반납", depTime, depDriver };
+        writeCache(cache);
+
+        pushRecent({ type: "checkout", car, time: depTime, driver: depDriver });
+
+        // UX: 시간 입력만 비워두기(다음 사용자를 위해)
+        // depManual.value = "";
+
         showToast("출차 저장 완료!", true);
         return;
       }
@@ -241,19 +352,28 @@
       if (!arrDriver) throw new Error("입차 운전자를 선택해줘!");
       if (!arrManual.value) arrManual.value = toDatetimeLocalValue(new Date());
       const arrDate = new Date(arrManual.value);
+      const arrTime = toSheetTimeString(arrDate);
 
       if (!selectedSpot) throw new Error("주차 위치를 선택해줘!");
 
-      const payload = {
+      await postNoCors({
         mode: "return",
-        car: car,
-        arrivalTime: toSheetTimeString(arrDate),
+        car,
+        arrivalTime: arrTime,
         arrivalDriver: arrDriver,
         parkingSpot: selectedSpot,
-      };
+      });
 
-      await postNoCors(payload);
-      showToast("입차 저장 완료! (미반납 건 자동 업데이트)", true);
+      cache[car] = { state: "사용가능", arrTime, arrDriver, spot: selectedSpot };
+      writeCache(cache);
+
+      pushRecent({ type: "return", car, time: arrTime, driver: arrDriver, spot: selectedSpot });
+
+      // UX: 입차 후 초기화
+      clearSpot();
+      // arrManual.value = "";
+
+      showToast("입차 저장 완료!", true);
     } catch (e) {
       showToast(e && e.message ? e.message : "저장 실패", false);
     } finally {
@@ -271,11 +391,19 @@
   depManualToggle.addEventListener("click", () => toggleManual(depManual, depManualToggle));
   arrManualToggle.addEventListener("click", () => toggleManual(arrManual, arrManualToggle));
 
-  toggleIntegr.addEventListener("click", () => integrPanel.classList.toggle("hidden"));
+  toggleIntegr && toggleIntegr.addEventListener("click", () => integrPanel.classList.toggle("hidden"));
+
   saveBtn.addEventListener("click", save);
+  refreshRecent && refreshRecent.addEventListener("click", () => {
+    // cache 기반이므로 단순 재렌더
+    renderRecent();
+    updateStatusUI();
+    showToast("새로고침 완료", true);
+  });
 
   // boot
   showBusy(false);
+  setToday();
   setMode("checkout");
   initSpots();
   loadLists().catch((e) => showToast("목록 조회 실패: " + (e && e.message ? e.message : "unknown"), false));
