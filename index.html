@@ -8,25 +8,27 @@
 <link rel="stylesheet" as="style" crossorigin
 href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css" />
 
-<link rel="stylesheet" href="./styles.css?v=20260304_min" />
+<link rel="stylesheet" href="./styles.css?v=20260305_ui" />
 </head>
 
 <body>
+
 <header class="topbar">
   <div class="topbar-inner">
     <div class="brand">
       <span class="dot"></span>
       <span class="brand-title">모인 법인차량 입출관리</span>
     </div>
-    <div class="topbar-meta">
-      <span class="pill ok">빠른 입력</span>
-      <span class="pill primary" id="modePill">출차</span>
-      <span class="pill ok">자동 연동</span>
-    </div>
   </div>
 </header>
 
 <main class="container">
+
+<!-- 안전운전 안내 -->
+<section class="safe-box">
+💪 오늘도 안전운전하세요
+</section>
+
 
 <section class="notice-card">
   <p class="notice">
@@ -36,19 +38,24 @@ href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretend
   </p>
 </section>
 
+
 <section class="card">
   <h2>기록모드선택</h2>
+
   <div class="btnrow">
     <button id="modeCheckout" class="btn primary full" type="button">출차 등록</button>
     <button id="modeReturn" class="btn full" type="button">입차 등록</button>
   </div>
-  <div class="steps" id="modeHint">
-    <span class="step on">출/입차 상태를 선택하여 아래 내용을 입력해주세요.</span>
 
+  <div class="mode-guide">
+  출/입차 상태를 선택하여 아래 내용을 입력해주세요.
   </div>
+
 </section>
 
+
 <section class="card">
+
   <h2>기록 입력</h2>
 
   <label class="label">차량</label>
@@ -58,6 +65,7 @@ href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretend
 
   <!-- 출차 -->
   <div id="checkoutSection">
+
     <label class="label">출차 운전자</label>
     <select id="depDriverSelect" class="input">
       <option value="">출차 운전자 선택</option>
@@ -65,85 +73,133 @@ href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretend
 
     <div class="row">
       <label class="label">출차 시간</label>
+
       <div class="btnrow">
         <button id="depNow" class="btn primary" type="button">현재시간입력</button>
         <button id="depManualToggle" class="btn" type="button">직접입력</button>
       </div>
+
       <input id="depManual" class="input" type="datetime-local" readonly />
-      <div class="hint">출차시 바로 기록해주시고 늦게 기록할 경우 직접입력해주세요.</div>
+
+      <div class="hint">
+      출차시 바로 기록해주시고 늦게 기록할 경우 직접입력해주세요.
+      </div>
+
     </div>
+
   </div>
+
 
   <!-- 입차 -->
   <div id="returnSection" class="hidden" hidden>
+
     <label class="label">입차 운전자</label>
+
     <select id="arrDriverSelect" class="input">
       <option value="">입차 운전자 선택</option>
     </select>
 
     <div class="row">
+
       <label class="label">입차 시간</label>
+
       <div class="btnrow">
         <button id="arrNow" class="btn primary" type="button">현재시간입력</button>
         <button id="arrManualToggle" class="btn" type="button">직접입력</button>
       </div>
+
       <input id="arrManual" class="input" type="datetime-local" readonly />
-      <div class="hint">입차시 바로 기록해주시고 늦게 기록할 경우 직접입력해주세요.</div>
+
+      <div class="hint">
+      입차시 바로 기록해주시고 늦게 기록할 경우 직접입력해주세요.
+      </div>
+
     </div>
+
 
     <label class="label">주차 위치</label>
-    <div class="hint">입차 등록에서만 필요합니다.</div>
+
+    <div class="hint">
+    입차 등록에서만 필요합니다.
+    </div>
+
 
     <div class="parking-map">
+
       <div class="map-label top">B1건물입구</div>
 
-      <button class="spot" data-spot="B1" style="grid-area:b1" type="button">B1</button>
-      <button class="spot" data-spot="C1" style="grid-area:c1" type="button">C1</button>
+      <button class="spot" data-spot="B1" style="grid-area:b1">B1</button>
+      <button class="spot" data-spot="C1" style="grid-area:c1">C1</button>
 
-      <button class="spot" data-spot="A1" style="grid-area:a1" type="button">A1</button>
-      <button class="spot" data-spot="B2" style="grid-area:b2" type="button">B2</button>
-      <button class="spot" data-spot="C2" style="grid-area:c2" type="button">C2</button>
-      <button class="spot" data-spot="D1" style="grid-area:d1" type="button">D1</button>
+      <button class="spot" data-spot="A1" style="grid-area:a1">A1</button>
+      <button class="spot" data-spot="B2" style="grid-area:b2">B2</button>
+      <button class="spot" data-spot="C2" style="grid-area:c2">C2</button>
+      <button class="spot" data-spot="D1" style="grid-area:d1">D1</button>
 
-      <button class="spot" data-spot="A2" style="grid-area:a2" type="button">A2</button>
-      <button class="spot" data-spot="D2" style="grid-area:d2" type="button">D2</button>
+      <button class="spot" data-spot="A2" style="grid-area:a2">A2</button>
+      <button class="spot" data-spot="D2" style="grid-area:d2">D2</button>
 
-      <button class="spot" data-spot="A3" style="grid-area:a3" type="button">A3</button>
-      <button class="spot" data-spot="D3" style="grid-area:d3" type="button">D3</button>
+      <button class="spot" data-spot="A3" style="grid-area:a3">A3</button>
+      <button class="spot" data-spot="D3" style="grid-area:d3">D3</button>
 
-      <button class="spot" data-spot="A4" style="grid-area:a4" type="button">A4</button>
-      <button class="spot" data-spot="D4" style="grid-area:d4" type="button">D4</button>
+      <button class="spot" data-spot="A4" style="grid-area:a4">A4</button>
+      <button class="spot" data-spot="D4" style="grid-area:d4">D4</button>
 
-      <button class="spot" data-spot="D5" style="grid-area:d5" type="button">D5</button>
-      <button class="spot" data-spot="D6" style="grid-area:d6" type="button">D6</button>
+      <button class="spot" data-spot="D5" style="grid-area:d5">D5</button>
+      <button class="spot" data-spot="D6" style="grid-area:d6">D6</button>
 
       <div class="map-label bottom">주차장입구</div>
+
     </div>
+
 
     <div class="row between">
       <div id="spotPreview" class="hint">선택된 위치: 없음</div>
-      <button id="spotClear" class="btn small" type="button">선택 취소</button>
+      <button id="spotClear" class="btn small">선택 취소</button>
     </div>
+
   </div>
 
-  <button id="saveBtn" class="btn primary full" type="button">출차 저장</button>
-  <div id="toast" class="toast" aria-live="polite"></div>
+
+  <button id="saveBtn" class="btn primary full">
+  💾출차 저장
+  </button>
+
+
+  <!-- 기록 보기 버튼 -->
+  <button
+  class="btn history-btn full"
+  onclick="window.open('https://docs.google.com/spreadsheets/d/1xVeyoZfhYW_aRfLSpQox-PeowNhBKIMsYMWDamWxUR0/edit?gid=2027092131','_blank','noopener')">
+
+  🔗출/입차 기록 보기
+
+  </button>
+
+
+  <div id="toast" class="toast"></div>
+
 </section>
 
+
 <section class="footer">
-  모인컴퍼니 차량관리 v1.1
+모인컴퍼니 차량관리 v1.1
 </section>
+
 
 </main>
 
-<!-- 페이지 전체 오버레이 -->
-<div id="savingOverlay" class="page-overlay hidden" hidden aria-live="polite">
+
+<div id="savingOverlay" class="page-overlay hidden">
+
   <div class="overlay-box">
-    <div class="spinner" aria-hidden="true"></div>
+    <div class="spinner"></div>
     <div class="overlay-text" id="savingText">열시미 저장중…</div>
   </div>
+
 </div>
 
+
 <script src="./app.js?v=20260304_min"></script>
+
 </body>
 </html>
