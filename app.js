@@ -4,10 +4,17 @@
 
   const $ = (id) => document.getElementById(id);
 
+  // status
+  const statusSantaValue = $("statusSantaValue");
+  const statusCarnivalValue = $("statusCarnivalValue");
+
+  // mode
   const modeCheckoutBtn = $("modeCheckout");
   const modeReturnBtn = $("modeReturn");
   const modeHint = $("modeHint");
+  const modePill = $("modePill");
 
+  // inputs
   const carSelect = $("carSelect");
   const depDriverSelect = $("depDriverSelect");
   const arrDriverSelect = $("arrDriverSelect");
@@ -23,25 +30,32 @@
   const checkoutSection = $("checkoutSection");
   const returnSection = $("returnSection");
 
+  // parking
   const spotPreview = $("spotPreview");
   const spotClear = $("spotClear");
 
+  // action
   const saveBtn = $("saveBtn");
   const toast = $("toast");
 
   const savingOverlay = $("savingOverlay");
   const savingText = $("savingText");
 
+  // recent table
   const recentTableBody = $("recentTableBody");
   const refreshRecent = $("refreshRecent");
 
-  let mode = "checkout";
+  let mode = "checkout"; // checkout | return
   let selectedSpot = "";
   let busy = false;
 
+  // cache
   const CACHE_KEY = "moin_vehicle_cache_v2";
   const cache = readCache();
 
+  // cache structure:
+  // cache.openTrip = { [car]: { car, depTime, depDriver } }
+  // cache.recentRows = [ {car, depTime, depDriver, arrTime, arrDriver, spot, ts} ]
   function readCache() {
     try {
       const v = JSON.parse(localStorage.getItem(CACHE_KEY) || "{}");
@@ -52,7 +66,6 @@
       return { openTrip: {}, recentRows: [] };
     }
   }
-
   function writeCache() {
     localStorage.setItem(CACHE_KEY, JSON.stringify(cache));
   }
@@ -71,9 +84,11 @@
       savingOverlay.hidden = !on;
       savingOverlay.classList.toggle("hidden", !on);
     }
+
     if (saveBtn) saveBtn.disabled = on;
     if (modeCheckoutBtn) modeCheckoutBtn.disabled = on;
     if (modeReturnBtn) modeReturnBtn.disabled = on;
+
     if (depNow) depNow.disabled = on;
     if (arrNow) arrNow.disabled = on;
     if (depManualToggle) depManualToggle.disabled = on;
@@ -109,6 +124,7 @@
     if (willEnable) inputEl.focus();
   }
 
+  // JSONP (CORS 우회)
   function fetchJSONP(url) {
     return new Promise((resolve, reject) => {
       const cbName = "cb_" + Math.random().toString(36).slice(2);
@@ -132,6 +148,7 @@
     });
   }
 
+  // ✅ 무조건 placeholder 옵션이 보이게
   function fillSelect(selectEl, items, placeholder) {
     if (!selectEl) return;
     selectEl.innerHTML = "";
@@ -175,36 +192,35 @@
     });
   }
 
-  function setMode(next) {
-    mode = next;
-    const isCheckout = mode === "checkout";
+  // ✅ 상태카드는 API가 아니라 캐시로 “즉시” 찍어야 함
+  function updateStatusUI() {
+    const open = cache.openTrip || {};
+    const santa = open["산타페"];
+    const carnival = open["카니발"];
 
-    if (modeCheckoutBtn) modeCheckoutBtn.classList.toggle("primary", isCheckout);
-    if (modeReturnBtn) modeReturnBtn.classList.toggle("primary", !isCheckout);
-
-    if (checkoutSection) {
-      checkoutSection.classList.toggle("hidden", !isCheckout);
-      checkoutSection.hidden = !isCheckout;
+    if (statusSantaValue) {
+      statusSantaValue.textContent = santa
+        ? `미반납 · ${santa.depTime || ""} / ${santa.depDriver || ""}`
+        : "사용 가능";
     }
-    if (returnSection) {
-      returnSection.classList.toggle("hidden", isCheckout);
-      returnSection.hidden = isCheckout;
+    if (statusCarnivalValue) {
+      statusCarnivalValue.textContent = carnival
+        ? `미반납 · ${carnival.depTime || ""} / ${carnival.depDriver || ""}`
+        : "사용 가능";
     }
+  }
 
-    if (saveBtn) saveBtn.textContent = isCheckout ? "출차 저장" : "입차 저장";
-
-    // ✅ 여기서 null이면 그냥 스킵
-    if (modeHint) {
-      modeHint.innerHTML = isCheckout
-        ? `<span class="step on">1 차량</span><span class="step on">2 출차운전자</span><span class="step on">3 출차시간</span><span class="step on">4 저장</span>`
-        : `<span class="step on">1 차량</span><span class="step on">2 입차운전자</span><span class="step on">3 입차시간</span><span class="step on">4 주차위치</span><span class="step on">5 저장</span>`;
-    }
-
-    if (isCheckout) clearSpot();
+  function escapeHtml(s) {
+    return String(s || "")
+      .replaceAll("&","&amp;")
+      .replaceAll("<","&lt;")
+      .replaceAll(">","&gt;")
+      .replaceAll('"',"&quot;")
+      .replaceAll("'","&#039;");
   }
 
   function renderRecentTable() {
-    if (!recentTableBody) return; // ✅ 없으면 스킵
+    if (!recentTableBody) return;
 
     const rows = (cache.recentRows || []).slice(0, 5);
     if (!rows.length) {
@@ -224,34 +240,73 @@
     `).join("");
   }
 
-  function escapeHtml(s) {
-    return String(s || "")
-      .replaceAll("&","&amp;")
-      .replaceAll("<","&lt;")
-      .replaceAll(">","&gt;")
-      .replaceAll('"',"&quot;")
-      .replaceAll("'","&#039;");
-  }
-
   function pushRecentRow(row) {
     cache.recentRows = [row, ...(cache.recentRows || [])].slice(0, 5);
     writeCache();
     renderRecentTable();
   }
 
+  function setMode(next) {
+    mode = next;
+    const isCheckout = mode === "checkout";
+
+    if (modeCheckoutBtn) modeCheckoutBtn.classList.toggle("primary", isCheckout);
+    if (modeReturnBtn) modeReturnBtn.classList.toggle("primary", !isCheckout);
+
+    if (checkoutSection) {
+      checkoutSection.classList.toggle("hidden", !isCheckout);
+      checkoutSection.hidden = !isCheckout;
+    }
+    if (returnSection) {
+      returnSection.classList.toggle("hidden", isCheckout);
+      returnSection.hidden = isCheckout;
+    }
+
+    if (saveBtn) saveBtn.textContent = isCheckout ? "출차 저장" : "입차 저장";
+    if (modePill) modePill.textContent = isCheckout ? "출차" : "입차";
+
+    if (modeHint) {
+      modeHint.innerHTML = isCheckout
+        ? `<span class="step on">1 차량</span><span class="step on">2 출차운전자</span><span class="step on">3 출차시간</span><span class="step on">4 저장</span>`
+        : `<span class="step on">1 차량</span><span class="step on">2 입차운전자</span><span class="step on">3 입차시간</span><span class="step on">4 주차위치</span><span class="step on">5 저장</span>`;
+    }
+
+    if (isCheckout) clearSpot();
+  }
+
+  // ✅ 느려도 화면이 멈추지 않게: timeout 걸기
+  function withTimeout(promise, ms) {
+    return new Promise((resolve, reject) => {
+      const t = setTimeout(() => reject(new Error("timeout")), ms);
+      promise.then(v => { clearTimeout(t); resolve(v); })
+             .catch(e => { clearTimeout(t); reject(e); });
+    });
+  }
+
   async function loadLists() {
-    const carsRes = await fetchJSONP(DEFAULT_API_URL + "?action=cars");
-    const driversRes = await fetchJSONP(DEFAULT_API_URL + "?action=drivers");
+    // 1) placeholder는 즉시
+    fillSelect(carSelect, [], "차량 불러오는 중…");
+    fillSelect(depDriverSelect, [], "운전자 불러오는 중…");
+    fillSelect(arrDriverSelect, [], "운전자 불러오는 중…");
+
+    // 2) 상태/최근은 즉시
+    updateStatusUI();
+    renderRecentTable();
+
+    // 3) 목록은 백그라운드(최대 4초)
+    const carsP = withTimeout(fetchJSONP(DEFAULT_API_URL + "?action=cars"), 4000);
+    const driversP = withTimeout(fetchJSONP(DEFAULT_API_URL + "?action=drivers"), 4000);
+
+    const [carsRes, driversRes] = await Promise.all([carsP, driversP]);
 
     fillSelect(carSelect, carsRes.cars || [], "차량 선택");
     fillSelect(depDriverSelect, driversRes.drivers || [], "출차 운전자 선택");
     fillSelect(arrDriverSelect, driversRes.drivers || [], "입차 운전자 선택");
-
-    renderRecentTable();
   }
 
   async function save() {
     if (busy) return;
+
     showBusy(true, mode === "checkout" ? "출차 저장 중…" : "입차 저장 중…");
 
     try {
@@ -264,22 +319,35 @@
         if (!depManual.value) depManual.value = toDatetimeLocalValue(new Date());
         const depTime = toSheetTimeString(new Date(depManual.value));
 
-        await postNoCors({ mode:"checkout", car, departureTime: depTime, departureDriver: depDriver });
+        await postNoCors({ mode: "checkout", car, departureTime: depTime, departureDriver: depDriver });
 
-        pushRecentRow({ car, depTime, depDriver, arrTime:"", arrDriver:"", spot:"", ts: Date.now() });
+        // openTrip 캐시 저장 (상태카드 즉시 반영)
+        cache.openTrip[car] = { car, depTime, depDriver };
+        writeCache();
+        updateStatusUI();
+
+        pushRecentRow({ car, depTime, depDriver, arrTime: "", arrDriver: "", spot: "", ts: Date.now() });
+
         showToast("출차 저장 완료!", true);
         return;
       }
 
+      // return
       const arrDriver = arrDriverSelect ? arrDriverSelect.value : "";
       if (!arrDriver) throw new Error("입차 운전자를 선택해줘!");
       if (!arrManual.value) arrManual.value = toDatetimeLocalValue(new Date());
       const arrTime = toSheetTimeString(new Date(arrManual.value));
       if (!selectedSpot) throw new Error("주차 위치를 선택해줘!");
 
-      await postNoCors({ mode:"return", car, arrivalTime: arrTime, arrivalDriver: arrDriver, parkingSpot: selectedSpot });
+      await postNoCors({ mode: "return", car, arrivalTime: arrTime, arrivalDriver: arrDriver, parkingSpot: selectedSpot });
 
-      pushRecentRow({ car, depTime:"", depDriver:"", arrTime, arrDriver, spot:selectedSpot, ts: Date.now() });
+      // 반납 완료: openTrip 제거
+      delete cache.openTrip[car];
+      writeCache();
+      updateStatusUI();
+
+      pushRecentRow({ car, depTime: "", depDriver: "", arrTime, arrDriver, spot: selectedSpot, ts: Date.now() });
+
       clearSpot();
       showToast("입차 저장 완료!", true);
     } catch (e) {
@@ -289,7 +357,7 @@
     }
   }
 
-  // events (null-safe)
+  // events
   if (modeCheckoutBtn) modeCheckoutBtn.addEventListener("click", () => setMode("checkout"));
   if (modeReturnBtn) modeReturnBtn.addEventListener("click", () => setMode("return"));
 
@@ -300,11 +368,24 @@
   if (arrManualToggle) arrManualToggle.addEventListener("click", () => toggleManual(arrManual, arrManualToggle));
 
   if (saveBtn) saveBtn.addEventListener("click", save);
-  if (refreshRecent) refreshRecent.addEventListener("click", () => renderRecentTable());
+  if (refreshRecent) refreshRecent.addEventListener("click", () => {
+    renderRecentTable();
+    updateStatusUI();
+    showToast("새로고침 완료", true);
+  });
 
   // boot
   showBusy(false);
   setMode("checkout");
   initSpots();
-  loadLists().catch((e) => showToast("목록 조회 실패: " + (e && e.message ? e.message : "unknown"), false));
+
+  // ✅ 상태카드는 로딩 없이 바로 '사용 가능/미반납'으로 바뀌어야 정상
+  updateStatusUI();
+  renderRecentTable();
+
+  loadLists().catch((e) => {
+    // 목록 실패해도 앱은 사용 가능하게 유지
+    showToast("목록 조회 실패(네트워크): " + (e && e.message ? e.message : "unknown"), false);
+    // placeholder 유지
+  });
 })();
