@@ -432,3 +432,28 @@ margin-top:12px;
 background:#000;
 
 }
+
+.topbar-inner{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+}
+
+/* 오른쪽 안전운전 pill */
+.safe-pill{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+
+  padding:8px 12px;
+  border-radius:999px;
+
+  background:#d1fae5;       /* 연두 배경 */
+  border:1px solid #86efac; /* 연두 테두리 */
+  color:#065f46;            /* 진한 초록 글씨 */
+
+  font-weight:600;
+  font-size:13px;
+  white-space:nowrap;
+}
