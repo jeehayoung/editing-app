@@ -3,12 +3,12 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>모인 법인차량 출입관리</title>
+<title>모인 법인차량 입출관리</title>
 
 <link rel="stylesheet" as="style" crossorigin
 href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css" />
 
-<link rel="stylesheet" href="./styles.css?v=20260304_v11" />
+<link rel="stylesheet" href="./styles.css?v=20260304_fast" />
 </head>
 
 <body>
@@ -16,11 +16,11 @@ href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretend
   <div class="topbar-inner">
     <div class="brand">
       <span class="dot"></span>
-      <span class="brand-title">모인 법인차량 입출기록</span>
+      <span class="brand-title">모인 법인차량 입출관리</span>
     </div>
     <div class="topbar-meta">
-      <span id="todayText" class="pill">💪오늘도 안전운전</span>
-</span>
+      <span class="pill ok">즉시 로딩 모드</span>
+      <span class="pill primary" id="modePill">출차</span>
     </div>
   </div>
 </header>
@@ -28,30 +28,26 @@ href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretend
 <main class="container">
 
 <section class="notice-card">
-<span class="notice-item">
-  🚗 <b>이중 주차 안내</b><br>
-  원활한 통행을 위해 반드시 재주차 부탁드립니다.<br>
-  📞 <b>연락처 확인</b><br>
-  앞 유리 비상 연락처 비치 여부를 꼭 확인해 주세요.<br>
-  📝 <b>기록 작성</b><br>
-  민원 예방을 위해 차량 이용 기록 작성에 동참해 주세요.
-</p>
-
+  <p class="notice">
+    <span class="notice-item">🚗 <b>이중 주차 안내</b><br>원활한 통행을 위해 반드시 재주차 부탁드립니다.</span>
+    <span class="notice-item">📞 <b>연락처 확인</b><br>앞 유리 비상 연락처 비치 여부를 꼭 확인해 주세요.</span>
+    <span class="notice-item">📝 <b>기록 작성</b><br>민원 예방을 위해 차량 이용 기록 작성에 동참해 주세요.</span>
+  </p>
 </section>
 
 <section class="card">
   <h2>현재 차량 상태</h2>
   <div class="status-grid">
-    <div class="status-item" id="statusSanta">
+    <div class="status-item">
       <div class="status-name">산타페</div>
-      <div class="status-value" id="statusSantaValue">로딩중…</div>
+      <div class="status-value" id="statusSantaValue">사용 가능</div>
     </div>
-    <div class="status-item" id="statusCarnival">
+    <div class="status-item">
       <div class="status-name">카니발</div>
-      <div class="status-value" id="statusCarnivalValue">로딩중…</div>
+      <div class="status-value" id="statusCarnivalValue">사용 가능</div>
     </div>
   </div>
-  <div class="hint">* 상태는 최근 저장 내역 기준으로 표시됩니다.</div>
+  <div class="hint">* 상태는 최근 저장 내역으로 표시됩니다.</div>
 </section>
 
 <section class="card">
@@ -61,11 +57,9 @@ href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretend
     <button id="modeReturn" class="btn full" type="button">입차 등록</button>
   </div>
   <div class="steps" id="modeHint">
-    <span class="step on">1 차량</span>
-    <span class="step on">2 출차운전자</span>
-    <span class="step on">3 출차시간</span>
-    <span class="step on">4 저장</span>
+    <span class="step on">출/입 기록에 맞춰 선택해 아래 내용 입력 해주세요.</span>
   </div>
+  <div class="hint" id="netHint"></div>
 </section>
 
 <section class="card">
@@ -76,7 +70,6 @@ href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretend
     <option value="">차량 선택</option>
   </select>
 
-  <!-- 출차 섹션 -->
   <div id="checkoutSection">
     <label class="label">출차 운전자</label>
     <select id="depDriverSelect" class="input">
@@ -94,7 +87,6 @@ href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretend
     </div>
   </div>
 
-  <!-- 입차 섹션 -->
   <div id="returnSection" class="hidden" hidden>
     <label class="label">입차 운전자</label>
     <select id="arrDriverSelect" class="input">
@@ -111,7 +103,7 @@ href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretend
       <div class="hint">입차시 바로 기록해주시고 늦게 기록한 경우 직접입력해주세요.</div>
     </div>
 
-    <label class="label">주차위치</label>
+    <label class="label">주차 위치</label>
     <div class="hint">입차 등록에서만 필요합니다.</div>
 
     <div class="parking-map">
@@ -147,24 +139,31 @@ href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretend
   </div>
 
   <button id="saveBtn" class="btn primary full" type="button">출차 저장</button>
-
-  <div id="savingOverlay" class="overlay hidden" hidden aria-live="polite">
-    <div class="overlay-box">
-      <div class="spinner" aria-hidden="true"></div>
-      <div class="overlay-text" id="savingText">처리 중…</div>
-    </div>
-  </div>
-
   <div id="toast" class="toast" aria-live="polite"></div>
 </section>
 
 <section class="card">
   <div class="card-head">
-    <h2>최근 기록</h2>
+    <h2>최근 기록 5개</h2>
     <button id="refreshRecent" class="btn small" type="button">새로고침</button>
   </div>
-  <div id="recentList" class="recent-list">
-    <div class="hint">최근 기록을 불러오는 중…</div>
+
+  <div class="table-wrap">
+    <table class="log-table">
+      <thead>
+        <tr>
+          <th class="sticky-col">차량</th>
+          <th>출차시간</th>
+          <th>출차운전자</th>
+          <th>입차시간</th>
+          <th>입차운전자</th>
+          <th>주차위치</th>
+        </tr>
+      </thead>
+      <tbody id="recentTableBody">
+        <tr><td class="sticky-col">-</td><td colspan="5">기록이 없습니다.</td></tr>
+      </tbody>
+    </table>
   </div>
 </section>
 
@@ -174,6 +173,13 @@ href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretend
 
 </main>
 
-<script src="./app.js?v=20260304_v11"></script>
+<div id="savingOverlay" class="page-overlay hidden" hidden aria-live="polite">
+  <div class="overlay-box">
+    <div class="spinner" aria-hidden="true"></div>
+    <div class="overlay-text" id="savingText">처리 중…</div>
+  </div>
+</div>
+
+<script src="./app.js?v=20260304_fast"></script>
 </body>
 </html>
